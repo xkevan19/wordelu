@@ -766,7 +766,7 @@
               if (conditionMet) {
                   self.achievements[achievement.id] = true; 
                   newlyUnlocked.push(achievement);
-                  self.showToast(`🏆 Achievement Unlocked: ${achievement.name}`); 
+                  showToast(`🏆 Achievement Unlocked: ${achievement.name}`); 
               }
           }
       };
