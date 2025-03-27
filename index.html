@@ -13,49 +13,16 @@
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/howler@2.2.3/dist/howler.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        'dark-background': '#121213',
-                        'card-bg': '#1A1A1B',
-                        'input-bg': '#27272A',
-                        'border-color': '#3A3A3C',
-                        'key-bg': '#333333',
-                        'key-hover': '#444444',
-                        'primary': '#6366F1',
-                        'primary-hover': '#4F46E5',
-                        'secondary': '#4B5563',
-                        'secondary-hover': '#374151',
-                        'correct': '#538D4E',
-                        'present': '#B59F3B',
-                        'absent': '#3A3A3C',
-                        'text-primary': '#FFFFFF',
-                        'text-secondary': '#D1D5DB',
-                        'text-muted': '#9CA3AF',
-                    },
-                    fontFamily: {
-                        'galindo': ['Galindo', 'cursive'],
-                        'sans': ['Inter', 'sans-serif']
-                    },
-                    spacing: {
-                        'grid-gap': '0.5rem',
-                        'key-gap': '0.3rem',
-                        'key-width': '2.8rem',
-                        'enter-width': '4.5rem',
-                        'key-height': '3.5rem',
-                        'cell-size': '3.5rem',
-                    },
-                    boxShadow: {
-                        'input-focus': '0 0 0 2px #6366F1',
-                        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
-                    },
-                    borderRadius: {
-                        'xl': '0.75rem',
-                    }
+                    colors: { 'dark-background': '#121213', 'card-bg': '#1A1A1B', 'input-bg': '#27272A', 'border-color': '#3A3A3C', 'key-bg': '#333333', 'key-hover': '#444444', 'primary': '#6366F1', 'primary-hover': '#4F46E5', 'secondary': '#4B5563', 'secondary-hover': '#374151', 'correct': '#538D4E', 'present': '#B59F3B', 'absent': '#3A3A3C', 'text-primary': '#FFFFFF', 'text-secondary': '#D1D5DB', 'text-muted': '#9CA3AF', },
+                    fontFamily: { 'galindo': ['Galindo', 'cursive'], 'sans': ['Inter', 'sans-serif'] },
+                    spacing: { 'grid-gap': '0.5rem', 'key-gap': '0.3rem', 'key-width': '2.8rem', 'enter-width': '4.5rem', 'key-height': '3.5rem', 'cell-size': '3.5rem', },
+                    boxShadow: { 'input-focus': '0 0 0 2px #6366F1', 'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', },
+                    borderRadius: { 'xl': '0.75rem', }
                 }
             }
         }
@@ -133,8 +100,7 @@
                         <path fill-rule="evenodd"
                             d="M4 5a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 011-1h6a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 110 2h6a1 1 0 110-2H7z"
                             clip-rule="evenodd" />
-                    </svg>
-                    Leaderboard
+                    </svg> Leaderboard
                 </button>
                 <button id="show-statistics-btn"
                     class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
@@ -143,8 +109,7 @@
                         <path fill-rule="evenodd"
                             d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z"
                             clip-rule="evenodd" />
-                    </svg>
-                    Statistics
+                    </svg> Statistics
                 </button>
                 <button id="show-achievements-btn"
                     class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
@@ -153,8 +118,7 @@
                         <path fill-rule="evenodd"
                             d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
                             clip-rule="evenodd" />
-                    </svg>
-                    Achievements
+                    </svg> Achievements
                 </button>
                 <button id="show-instructions-btn"
                     class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
@@ -163,8 +127,7 @@
                         <path fill-rule="evenodd"
                             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
                             clip-rule="evenodd" />
-                    </svg>
-                    How to Play
+                    </svg> How to Play
                 </button>
             </div>
 
@@ -262,166 +225,114 @@
 
             <div id="instructions-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
                 <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">How to Play & Score</h2>
-
                 <div class="space-y-6 text-text-secondary">
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-text-primary">1. Getting Started</h3>
                         <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span><strong class="font-medium">Your Name:</strong> Enter a name for the Leaderboard
-                                    (optional).</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <div>
-                                    <strong class="font-medium">Difficulty:</strong>
+                            <div class="flex items-center"><span class="mr-2">•</span><span><strong
+                                        class="font-medium">Your Name:</strong> Enter a name for the Leaderboard
+                                    (optional for guests, automatic if logged in).</span></div>
+                            <div class="flex items-center"><span class="mr-2">•</span>
+                                <div><strong class="font-medium">Difficulty:</strong>
                                     <div class="ml-4">
-                                        <div class="flex items-center">
-                                            <span class="mr-2">◦</span>
-                                            <span>Easy: No time limit.</span>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <span class="mr-2">◦</span>
-                                            <span>Hard: 120 seconds (2 minutes) to guess!</span>
-                                        </div>
+                                        <div class="flex items-center"><span class="mr-2">◦</span><span>Easy: No time
+                                                limit.</span></div>
+                                        <div class="flex items-center"><span class="mr-2">◦</span><span>Hard: 120
+                                                seconds (2 minutes) to guess!</span></div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span><strong class="font-medium">Category:</strong> Choose a word theme or keep it
-                                    General.</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span>Click <strong class="font-medium text-primary">Start Game</strong>!</span>
-                            </div>
+                            <div class="flex items-center"><span class="mr-2">•</span><span><strong
+                                        class="font-medium">Category:</strong> Choose a word theme or keep it
+                                    General.</span></div>
+                            <div class="flex items-center"><span class="mr-2">•</span><span>Click <strong
+                                        class="font-medium text-primary">Start Game</strong>!</span></div>
                         </div>
                     </div>
-
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-text-primary">2. Gameplay</h3>
                         <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span>You have <strong class="font-medium">6 attempts</strong> to guess the secret
-                                    5-letter word.</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span>Type your guess using your keyboard or the on-screen keyboard.</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span>Press <strong class="font-medium">Enter</strong> to submit.</span>
-                            </div>
+                            <div class="flex items-center"><span class="mr-2">•</span><span>You have <strong
+                                        class="font-medium">6 attempts</strong> to guess the secret 5-letter
+                                    word.</span></div>
+                            <div class="flex items-center"><span class="mr-2">•</span><span>Type your guess using your
+                                    keyboard or the on-screen keyboard.</span></div>
+                            <div class="flex items-center"><span class="mr-2">•</span><span>Press <strong
+                                        class="font-medium">Enter</strong> to submit.</span></div>
                         </div>
                     </div>
-
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-text-primary">3. Color Coding</h3>
                         <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center">
-                                <span
-                                    class="inline-block w-5 h-5 bg-correct rounded mr-2 border border-gray-700"></span>
-                                <span><strong class="font-medium text-correct mr-1">Green:</strong> Correct letter,
-                                    correct position.</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span
-                                    class="inline-block w-5 h-5 bg-present rounded mr-2 border border-gray-700"></span>
-                                <span><strong class="font-medium text-present mr-1">Yellow:</strong> Correct letter,
-                                    wrong position.</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="inline-block w-5 h-5 bg-absent rounded mr-2 border border-gray-900"></span>
-                                <span><strong class="font-medium text-text-muted mr-1">Gray:</strong> Letter not in the
-                                    word.</span>
-                            </div>
+                            <div class="flex items-center"><span
+                                    class="inline-block w-5 h-5 bg-correct rounded mr-2 border border-gray-700"></span><span><strong
+                                        class="font-medium text-correct mr-1">Green:</strong> Correct letter, correct
+                                    position.</span></div>
+                            <div class="flex items-center"><span
+                                    class="inline-block w-5 h-5 bg-present rounded mr-2 border border-gray-700"></span><span><strong
+                                        class="font-medium text-present mr-1">Yellow:</strong> Correct letter, wrong
+                                    position.</span></div>
+                            <div class="flex items-center"><span
+                                    class="inline-block w-5 h-5 bg-absent rounded mr-2 border border-gray-900"></span><span><strong
+                                        class="font-medium text-text-muted mr-1">Gray:</strong> Letter not in the
+                                    word.</span></div>
                             <p class="mt-2">The on-screen keyboard updates with these colors too!</p>
                         </div>
                     </div>
-
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-text-primary">4. Winning & Losing</h3>
                         <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span><strong class="font-medium">Win:</strong> Guess the word within 6 tries (and time
-                                    if on Hard).</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span><strong class="font-medium">Lose:</strong> Run out of attempts or time (on
-                                    Hard).</span>
+                            <div class="flex items-center"><span class="mr-2">•</span><span><strong
+                                        class="font-medium">Win:</strong> Guess the word within 6 tries (and time if on
+                                    Hard).</span></div>
+                            <div class="flex items-center"><span class="mr-2">•</span><span><strong
+                                        class="font-medium">Lose:</strong> Run out of attempts or time (on Hard).</span>
                             </div>
                         </div>
                     </div>
-
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-text-primary">5. Points System</h3>
                         <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <div>
-                                    <strong class="font-medium">Exact Match Bonus:</strong> +20 points for guessing the
-                                    word on your first try.
-                                </div>
+                            <div class="flex items-center"><span class="mr-2">•</span>
+                                <div><strong class="font-medium">Exact Match Bonus:</strong> +20 points for guessing the
+                                    word on your first try.</div>
                             </div>
                             <div class="ml-4">
-                                <div class="flex items-center">
-                                    <span class="mr-2">◦</span>
-                                    <strong class="font-medium">Letter Points:</strong>
-                                </div>
+                                <div class="flex items-center"><span class="mr-2">◦</span><strong
+                                        class="font-medium">Letter Points:</strong></div>
                                 <div class="ml-4">
-                                    <div class="flex items-center">
-                                        <span class="mr-2">▪</span>
-                                        <span>+2 points per <span
+                                    <div class="flex items-center"><span class="mr-2">▪</span><span>+2 points per <span
                                                 class="inline-block w-3 h-3 bg-correct rounded mx-1"></span> Green
-                                            letter (first time per guess).</span>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <span class="mr-2">▪</span>
-                                        <span>+1 point per <span
+                                            letter.</span></div>
+                                    <div class="flex items-center"><span class="mr-2">▪</span><span>+1 point per <span
                                                 class="inline-block w-3 h-3 bg-present rounded mx-1"></span> Yellow
-                                            letter (first time per guess).</span>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <span class="mr-2">▪</span>
-                                        <span>0 points for <span
+                                            letter.</span></div>
+                                    <div class="flex items-center"><span class="mr-2">▪</span><span>0 points for <span
                                                 class="inline-block w-3 h-3 bg-absent rounded mx-1"></span> Gray
-                                            letters.</span>
-                                    </div>
+                                            letters.</span></div>
                                 </div>
                             </div>
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <div>
-                                    <strong class="font-medium">Hard Mode Time Bonus:</strong>
+                            <div class="flex items-center"><span class="mr-2">•</span>
+                                <div><strong class="font-medium">Hard Mode Time Bonus:</strong>
                                     <div class="ml-4">
-                                        <div class="flex items-center">
-                                            <span class="mr-2">◦</span>
-                                            <span>+1 point for every 4 seconds left upon winning.</span>
-                                        </div>
+                                        <div class="flex items-center"><span class="mr-2">◦</span><span>+1 point for
+                                                every 4 seconds left upon winning.</span></div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center">
-                                <span class="mr-2">•</span>
-                                <span>Your final score sums up points from all guesses + bonus.</span>
-                            </div>
+                            <div class="flex items-center"><span class="mr-2">•</span><span>Your final score sums up
+                                    points from all guesses + bonus.</span></div>
                         </div>
                     </div>
-
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-text-primary">6. Extra Features</h3>
-                        <div class="flex items-center ml-4">
-                            <span class="mr-2">•</span>
-                            <span>Use the menu buttons to check the <strong class="font-medium">Leaderboard</strong>,
-                                your <strong class="font-medium">Statistics</strong>, and unlocked <strong
-                                    class="font-medium">Achievements</strong>.</span>
-                        </div>
+                        <div class="flex items-center ml-4"><span class="mr-2">•</span><span>Use the menu buttons to
+                                check the <strong class="font-medium">Leaderboard</strong>, your <strong
+                                    class="font-medium">Statistics</strong>, and unlocked <strong
+                                    class="font-medium">Achievements</strong>.</span></div>
+                        <div class="flex items-center ml-4"><span class="mr-2">•</span><span>Logged-in users can manage
+                                their <a href="account.html" class="text-primary hover:underline">Account</a>
+                                details.</span></div>
                     </div>
                 </div>
             </div>
@@ -434,8 +345,7 @@
                 <path fill-rule="evenodd"
                     d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
                     clip-rule="evenodd" />
-            </svg>
-            Back to Menu
+            </svg> Back to Menu
         </button>
 
     </div>

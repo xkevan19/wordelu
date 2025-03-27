@@ -38,21 +38,33 @@ const updatePasswordButton = document.getElementById("update-password-button");
 const resetUpdateMessage = document.getElementById("reset-update-message");
 
 function showMessage(element, message, isError = true) {
-  if (!element) return;
+  if (!element) {
+    return;
+  }
   element.textContent = message;
   element.className = `auth-message ${isError ? "error" : "success"}`;
   element.style.display = "block";
 }
+
 function clearMessages() {
-  if (signupMessage) signupMessage.style.display = "none";
-  if (loginMessage) loginMessage.style.display = "none";
-  if (resetRequestMessage) resetRequestMessage.style.display = "none";
-  if (resetUpdateMessage) resetUpdateMessage.style.display = "none";
-  if (signupMessage) signupMessage.textContent = "";
-  if (loginMessage) loginMessage.textContent = "";
-  if (resetRequestMessage) resetRequestMessage.textContent = "";
-  if (resetUpdateMessage) resetUpdateMessage.textContent = "";
+  if (signupMessage) {
+    signupMessage.style.display = "none";
+    signupMessage.textContent = "";
+  }
+  if (loginMessage) {
+    loginMessage.style.display = "none";
+    loginMessage.textContent = "";
+  }
+  if (resetRequestMessage) {
+    resetRequestMessage.style.display = "none";
+    resetRequestMessage.textContent = "";
+  }
+  if (resetUpdateMessage) {
+    resetUpdateMessage.style.display = "none";
+    resetUpdateMessage.textContent = "";
+  }
 }
+
 function setLoading(button, isLoading) {
   if (!button) return;
   button.disabled = isLoading;
@@ -66,21 +78,25 @@ function setLoading(button, isLoading) {
 }
 
 function showLoginForm() {
+  if (!authContainer) return;
   authContainer.classList.remove("right-panel-active");
-  if (window.innerWidth < 768) {
+  if (window.innerWidth < 768 && loginFormContainer && signupFormContainer) {
     loginFormContainer.style.display = "flex";
     signupFormContainer.style.display = "none";
   }
   clearMessages();
 }
+
 function showSignUpForm() {
+  if (!authContainer) return;
   authContainer.classList.add("right-panel-active");
-  if (window.innerWidth < 768) {
+  if (window.innerWidth < 768 && loginFormContainer && signupFormContainer) {
     signupFormContainer.style.display = "flex";
     loginFormContainer.style.display = "none";
   }
   clearMessages();
 }
+
 if (signInButton) signInButton.addEventListener("click", showLoginForm);
 if (signUpButton) signUpButton.addEventListener("click", showSignUpForm);
 if (switchToLoginMobileLink)
@@ -93,22 +109,23 @@ if (switchToSignUpMobileLink)
     e.preventDefault();
     showSignUpForm();
   });
-if (window.innerWidth >= 768) {
-  loginFormContainer.style.display = "flex";
-  signupFormContainer.style.display = "flex";
-} else {
-  showLoginForm();
+
+if (authContainer && loginFormContainer && signupFormContainer) {
+  if (window.innerWidth >= 768) {
+    loginFormContainer.style.display = "flex";
+    signupFormContainer.style.display = "flex";
+  } else {
+    showLoginForm();
+  }
 }
 
 async function initializeSupabase() {
   try {
     const response = await fetch("/.netlify/functions/get-supabase-config");
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({
-          error: "Failed to parse error response from config endpoint.",
-        }));
+      const errorData = await response.json().catch(() => ({
+        error: "Failed to parse error response from config endpoint.",
+      }));
       throw new Error(
         `Failed to fetch Supabase config: ${response.status} ${
           response.statusText
@@ -122,29 +139,33 @@ async function initializeSupabase() {
     }
 
     _supabase = createClient(config.url, config.key);
-    console.log("Supabase Client Initialized successfully.");
+    console.log("Supabase Client Initialized (from auth.js).");
 
-    enableForms();
+    if (authContainer) {
+      enableAuthForms();
+      setupAuthFormListeners();
+    }
     setupAuthStateListener();
-    setupFormListeners();
   } catch (error) {
-    console.error("Supabase Initialization Error:", error);
-    showMessage(
-      loginMessage,
-      `Error initializing application: ${error.message}. Please try again later or contact support.`,
-      true
-    );
+    console.error("Supabase Initialization Error (from auth.js):", error);
+    if (loginMessage) {
+      showMessage(
+        loginMessage,
+        `Error initializing application: ${error.message}. Please try again later or contact support.`,
+        true
+      );
+    }
   }
 }
 
-function enableForms() {
+function enableAuthForms() {
   if (loginSubmitButton) loginSubmitButton.disabled = false;
   if (signupSubmitButton) signupSubmitButton.disabled = false;
   if (sendResetLinkButton) sendResetLinkButton.disabled = false;
   if (updatePasswordButton) updatePasswordButton.disabled = false;
 }
 
-function setupFormListeners() {
+function setupAuthFormListeners() {
   const appBaseUrl = window.location.origin;
   const redirectUrl = `${appBaseUrl}/auth.html`;
 
@@ -161,11 +182,13 @@ function setupFormListeners() {
       }
     });
   }
+
   if (closeResetRequestButton) {
     closeResetRequestButton.addEventListener("click", () => {
       if (resetRequestSection) resetRequestSection.style.display = "none";
     });
   }
+
   if (resetRequestSection) {
     resetRequestSection.addEventListener("click", (e) => {
       if (e.target === resetRequestSection) {
@@ -173,9 +196,12 @@ function setupFormListeners() {
       }
     });
   }
+
   if (resetRequestForm) {
     resetRequestForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (!sendResetLinkButton || !resetEmailInput || !resetRequestMessage)
+        return;
       clearMessages();
       setLoading(sendResetLinkButton, true);
       const email = resetEmailInput.value.trim();
@@ -216,6 +242,13 @@ function setupFormListeners() {
   if (resetUpdateForm) {
     resetUpdateForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (
+        !newPasswordInput ||
+        !confirmPasswordInput ||
+        !updatePasswordButton ||
+        !resetUpdateMessage
+      )
+        return;
       clearMessages();
       const newPassword = newPasswordInput.value;
       const confirmPassword = confirmPasswordInput.value;
@@ -275,6 +308,16 @@ function setupFormListeners() {
   if (signupForm) {
     signupForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (
+        !signupSubmitButton ||
+        !signupUsernameInput ||
+        !signupEmailInput ||
+        !signupPasswordInput ||
+        !signupTeamSelect ||
+        !signupCountryInput ||
+        !signupMessage
+      )
+        return;
       clearMessages();
       setLoading(signupSubmitButton, true);
       const username = signupUsernameInput.value.trim();
@@ -324,10 +367,18 @@ function setupFormListeners() {
           else if (
             error.message.includes(
               "duplicate key value violates unique constraint"
-            )
+            ) &&
+            error.message.includes("username") 
           )
             userMessage =
               "This username is already taken. Please choose another.";
+          else if (
+            error.message.includes(
+              "duplicate key value violates unique constraint"
+            )
+          )
+            userMessage =
+              "An account or profile constraint failed. Please check your details."; 
           showMessage(signupMessage, userMessage);
         } else if (data.user) {
           if (data.user.identities && data.user.identities.length === 0) {
@@ -336,6 +387,7 @@ function setupFormListeners() {
               "Sign up successful! Please check your email to confirm your account.",
               false
             );
+            signupForm.reset(); 
           } else {
             showMessage(
               signupMessage,
@@ -345,8 +397,8 @@ function setupFormListeners() {
             setTimeout(() => {
               window.location.href = "index.html";
             }, 1500);
+            signupForm.reset(); 
           }
-          signupForm.reset();
         } else {
           showMessage(
             signupMessage,
@@ -355,10 +407,21 @@ function setupFormListeners() {
         }
       } catch (err) {
         console.error("Unexpected sign up exception:", err);
-        showMessage(
-          signupMessage,
-          "An unexpected error occurred. Please try again."
-        );
+        if (
+          err.message &&
+          err.message.includes("duplicate key value") &&
+          err.message.includes("profiles_username_key")
+        ) {
+          showMessage(
+            signupMessage,
+            "This username is already taken. Please choose another."
+          );
+        } else {
+          showMessage(
+            signupMessage,
+            "An unexpected error occurred. Please try again."
+          );
+        }
       } finally {
         setLoading(signupSubmitButton, false);
       }
@@ -368,6 +431,13 @@ function setupFormListeners() {
   if (loginForm) {
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (
+        !loginSubmitButton ||
+        !loginEmailInput ||
+        !loginPasswordInput ||
+        !loginMessage
+      )
+        return;
       clearMessages();
       setLoading(loginSubmitButton, true);
       const email = loginEmailInput.value.trim();
@@ -421,37 +491,47 @@ function setupAuthStateListener() {
   if (!_supabase) return;
 
   _supabase.auth.onAuthStateChange(async (event, session) => {
-    if (resetRequestSection) resetRequestSection.style.display = "none";
-    let isRecovery = window.location.hash.includes("type=recovery");
+    const isAuthPage = !!authContainer;
+    const isRecovery = window.location.hash.includes("type=recovery");
 
     if (
       event === "PASSWORD_RECOVERY" ||
       (event === "SIGNED_IN" && isRecovery)
     ) {
-      clearMessages();
-      if (resetUpdateSection) resetUpdateSection.style.display = "flex";
-      if (authContainer) authContainer.style.display = "none";
-      if (isRecovery)
+      if (isAuthPage && resetUpdateSection) {
+        clearMessages();
+        resetUpdateSection.style.display = "flex";
+        if (authContainer) authContainer.style.display = "none";
+        if (newPasswordInput) newPasswordInput.focus();
         history.replaceState(
           null,
           "",
           window.location.pathname + window.location.search
         );
+      }
     } else if (event === "SIGNED_IN") {
-      if (window.location.pathname.includes("auth.html")) {
+      if (window.location.pathname.includes("auth.html") && !isRecovery) {
         window.location.href = "index.html";
       }
-      if (authContainer) authContainer.style.display = "block";
-      if (resetUpdateSection) resetUpdateSection.style.display = "none";
+      if (isAuthPage && authContainer) authContainer.style.display = "block";
+      if (isAuthPage && resetUpdateSection)
+        resetUpdateSection.style.display = "none";
     } else if (event === "SIGNED_OUT") {
-      if (authContainer) authContainer.style.display = "block";
-      if (resetUpdateSection) resetUpdateSection.style.display = "none";
-      showLoginForm();
+      if (!window.location.pathname.includes("auth.html")) {
+        window.location.href = "auth.html";
+        return;
+      }
+      if (isAuthPage) {
+        if (authContainer) authContainer.style.display = "block";
+        if (resetUpdateSection) resetUpdateSection.style.display = "none";
+        showLoginForm();
+      }
     } else if (event === "INITIAL_SESSION") {
-      if (isRecovery) {
+      if (isRecovery && isAuthPage && resetUpdateSection) {
         clearMessages();
-        if (resetUpdateSection) resetUpdateSection.style.display = "flex";
+        resetUpdateSection.style.display = "flex";
         if (authContainer) authContainer.style.display = "none";
+        if (newPasswordInput) newPasswordInput.focus();
         history.replaceState(
           null,
           "",
@@ -459,7 +539,10 @@ function setupAuthStateListener() {
         );
       } else if (session && window.location.pathname.includes("auth.html")) {
         window.location.href = "index.html";
-      } else if (!session) {
+      } else if (!session && !window.location.pathname.includes("auth.html")) {
+        window.location.href = "auth.html";
+        return;
+      } else if (!session && isAuthPage) {
         if (authContainer) authContainer.style.display = "block";
         if (resetUpdateSection) resetUpdateSection.style.display = "none";
         showLoginForm();
@@ -468,212 +551,21 @@ function setupAuthStateListener() {
   });
 }
 
-const countries = [
-  "Afghanistan",
-  "Albania",
-  "Algeria",
-  "Andorra",
-  "Angola",
-  "Antigua and Barbuda",
-  "Argentina",
-  "Armenia",
-  "Australia",
-  "Austria",
-  "Azerbaijan",
-  "Bahamas",
-  "Bahrain",
-  "Bangladesh",
-  "Barbados",
-  "Belarus",
-  "Belgium",
-  "Belize",
-  "Benin",
-  "Bhutan",
-  "Bolivia",
-  "Bosnia and Herzegovina",
-  "Botswana",
-  "Brazil",
-  "Brunei",
-  "Bulgaria",
-  "Burkina Faso",
-  "Burundi",
-  "Cabo Verde",
-  "Cambodia",
-  "Cameroon",
-  "Canada",
-  "Central African Republic",
-  "Chad",
-  "Chile",
-  "China",
-  "Colombia",
-  "Comoros",
-  "Congo, Democratic Republic of the",
-  "Congo, Republic of the",
-  "Costa Rica",
-  "Cote d'Ivoire",
-  "Croatia",
-  "Cuba",
-  "Cyprus",
-  "Czech Republic",
-  "Denmark",
-  "Djibouti",
-  "Dominica",
-  "Dominican Republic",
-  "Ecuador",
-  "Egypt",
-  "El Salvador",
-  "Equatorial Guinea",
-  "Eritrea",
-  "Estonia",
-  "Eswatini",
-  "Ethiopia",
-  "Fiji",
-  "Finland",
-  "France",
-  "Gabon",
-  "Gambia",
-  "Georgia",
-  "Germany",
-  "Ghana",
-  "Greece",
-  "Grenada",
-  "Guatemala",
-  "Guinea",
-  "Guinea-Bissau",
-  "Guyana",
-  "Haiti",
-  "Honduras",
-  "Hungary",
-  "Iceland",
-  "India",
-  "Indonesia",
-  "Iran",
-  "Iraq",
-  "Ireland",
-  "Israel",
-  "Italy",
-  "Jamaica",
-  "Japan",
-  "Jordan",
-  "Kazakhstan",
-  "Kenya",
-  "Kiribati",
-  "Korea, North",
-  "Korea, South",
-  "Kosovo",
-  "Kuwait",
-  "Kyrgyzstan",
-  "Laos",
-  "Latvia",
-  "Lebanon",
-  "Lesotho",
-  "Liberia",
-  "Libya",
-  "Liechtenstein",
-  "Lithuania",
-  "Luxembourg",
-  "Madagascar",
-  "Malawi",
-  "Malaysia",
-  "Maldives",
-  "Mali",
-  "Malta",
-  "Marshall Islands",
-  "Mauritania",
-  "Mauritius",
-  "Mexico",
-  "Micronesia",
-  "Moldova",
-  "Monaco",
-  "Mongolia",
-  "Montenegro",
-  "Morocco",
-  "Mozambique",
-  "Myanmar (Burma)",
-  "Namibia",
-  "Nauru",
-  "Nepal",
-  "Netherlands",
-  "New Zealand",
-  "Nicaragua",
-  "Niger",
-  "Nigeria",
-  "North Macedonia",
-  "Norway",
-  "Oman",
-  "Pakistan",
-  "Palau",
-  "Palestine State",
-  "Panama",
-  "Papua New Guinea",
-  "Paraguay",
-  "Peru",
-  "Philippines",
-  "Poland",
-  "Portugal",
-  "Qatar",
-  "Romania",
-  "Russia",
-  "Rwanda",
-  "Saint Kitts and Nevis",
-  "Saint Lucia",
-  "Saint Vincent and the Grenadines",
-  "Samoa",
-  "San Marino",
-  "Sao Tome and Principe",
-  "Saudi Arabia",
-  "Senegal",
-  "Serbia",
-  "Seychelles",
-  "Sierra Leone",
-  "Singapore",
-  "Slovakia",
-  "Slovenia",
-  "Solomon Islands",
-  "Somalia",
-  "South Africa",
-  "South Sudan",
-  "Spain",
-  "Sri Lanka",
-  "Sudan",
-  "Suriname",
-  "Sweden",
-  "Switzerland",
-  "Syria",
-  "Taiwan",
-  "Tajikistan",
-  "Tanzania",
-  "Thailand",
-  "Timor-Leste",
-  "Togo",
-  "Tonga",
-  "Trinidad and Tobago",
-  "Tunisia",
-  "Turkey",
-  "Turkmenistan",
-  "Tuvalu",
-  "Uganda",
-  "Ukraine",
-  "United Arab Emirates",
-  "United Kingdom",
-  "United States",
-  "Uruguay",
-  "Uzbekistan",
-  "Vanuatu",
-  "Vatican City",
-  "Venezuela",
-  "Vietnam",
-  "Yemen",
-  "Zambia",
-  "Zimbabwe",
-];
-countries.sort();
 function setupCountrySearch(inputId, resultsId, hiddenInputId, wrapperId) {
   const searchInput = document.getElementById(inputId);
   const resultsList = document.getElementById(resultsId);
   const hiddenInput = document.getElementById(hiddenInputId);
   const wrapper = document.getElementById(wrapperId);
+
   if (!searchInput || !resultsList || !hiddenInput || !wrapper) return;
+
+  if (typeof countries === "undefined") {
+    console.error(
+      "Countries array not found. Make sure countries.js is loaded before this script."
+    );
+    return;
+  }
+
   function renderResults(filteredCountries) {
     resultsList.innerHTML = "";
     if (filteredCountries.length === 0 && searchInput.value.trim() !== "") {
@@ -728,11 +620,17 @@ function setupCountrySearch(inputId, resultsId, hiddenInputId, wrapperId) {
     if (!wrapper.contains(event.target)) resultsList.classList.add("hidden");
   });
 }
-setupCountrySearch(
-  "country-search-input-signup",
-  "country-results-list-signup",
-  "signup-country",
-  "country-search-wrapper-signup"
+
+const signupCountrySearchInput = document.getElementById(
+  "country-search-input-signup"
 );
+if (signupCountrySearchInput) {
+  setupCountrySearch(
+    "country-search-input-signup",
+    "country-results-list-signup",
+    "signup-country",
+    "country-search-wrapper-signup"
+  );
+}
 
 document.addEventListener("DOMContentLoaded", initializeSupabase);

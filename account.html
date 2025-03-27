@@ -50,8 +50,8 @@
 
                 <div>
                     <label for="profile-team" class="block mb-2 text-sm">Team</label>
-                    <select id="profile-team" required
-                        class="w-full bg-input-bg border border-border-color rounded-md px-4 py-3 text-text-primary focus:outline-none focus:border-primary focus:shadow-input-focus">
+                    <select id="profile-team" required disabled
+                        class="w-full bg-secondary border border-border-color rounded-md px-4 py-3 text-text-muted cursor-not-allowed focus:outline-none focus:border-primary focus:shadow-input-focus">
                         <option value="red">Red Team</option>
                         <option value="blue">Blue Team</option>
                     </select>
@@ -68,9 +68,9 @@
                     </div>
                 </div>
 
-                <div id="profile-message" class="text-sm text-center"></div>
+                <div id="profile-message" class="text-sm text-center" style="display: none;"></div>
 
-                <button type="submit" id="update-profile-button"
+                <button type="submit" id="update-profile-button" disabled
                     class="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-md transition-colors">
                     Update Profile
                 </button>
@@ -97,9 +97,9 @@
                             class="w-full bg-input-bg border border-border-color rounded-md px-4 py-3 text-text-primary focus:outline-none focus:border-primary focus:shadow-input-focus">
                     </div>
 
-                    <div id="password-message" class="text-sm text-center"></div>
+                    <div id="password-message" class="text-sm text-center" style="display: none;"></div>
 
-                    <button type="submit" id="change-password-button"
+                    <button type="submit" id="change-password-button" disabled
                         class="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-md transition-colors">
                         Change Password
                     </button>

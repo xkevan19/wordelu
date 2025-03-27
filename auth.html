@@ -51,7 +51,7 @@
                         class="absolute z-60 w-full bg-card-bg border border-border-color rounded-md bottom-full mb-1 max-h-60 overflow-y-auto hidden shadow-lg">
                     </div>
                 </div>
-                <div id="signup-message" class="auth-message"></div>
+                <div id="signup-message" class="auth-message" style="display: none;"></div>
                 <button type="submit" id="signup-button" disabled>Sign Up</button>
                 <p class="text-sm mt-6 text-text-muted md:hidden"> Already have an account? <span class="toggle-link"
                         id="switchToLoginMobile">Login</span> </p>
@@ -65,7 +65,7 @@
                 <input type="email" id="login-email" placeholder="Email" required class="text-base" />
                 <input type="password" id="login-password" placeholder="Password" required class="text-base" />
                 <a href="#" id="forgot-password-link">Forgot your password?</a>
-                <div id="login-message" class="auth-message"></div>
+                <div id="login-message" class="auth-message" style="display: none;"></div>
                 <button type="submit" id="login-button" disabled>Login</button>
                 <span class="text-xs mt-4 text-text-muted">Or <a href="index.html"
                         class="text-primary hover:underline">Continue as Guest</a></span>
@@ -90,20 +90,20 @@
         </div>
     </div>
 
-    <div id="reset-request-section" class="reset-section">
+    <div id="reset-request-section" class="reset-section" style="display: none;">
         <div class="reset-content">
             <button id="close-reset-request" class="close-button" aria-label="Close">×</button>
             <h2>Reset Password</h2>
             <p>Enter your email address below. If an account exists, we'll send you a link to reset your password.</p>
             <form id="reset-request-form">
                 <input type="email" id="reset-email-input" placeholder="Your Email Address" required>
-                <div id="reset-request-message" class="reset-message"></div>
+                <div id="reset-request-message" class="reset-message" style="display: none;"></div>
                 <button type="submit" id="send-reset-link-button" disabled>Send Reset Link</button>
             </form>
         </div>
     </div>
 
-    <div id="reset-update-section" class="reset-section">
+    <div id="reset-update-section" class="reset-section" style="display: none;">
         <div class="reset-content">
             <h2>Set New Password</h2>
             <p>Enter and confirm your new password below.</p>
@@ -112,12 +112,13 @@
                     minlength="6">
                 <input type="password" id="confirm-password-input" placeholder="Confirm New Password" required
                     minlength="6">
-                <div id="reset-update-message" class="reset-message"></div>
+                <div id="reset-update-message" class="reset-message" style="display: none;"></div>
                 <button type="submit" id="update-password-button" disabled>Update Password</button>
             </form>
         </div>
     </div>
 
+    <script src="js/countries.js"></script>
     <script src="js/auth.js"></script>
 
 </body>
