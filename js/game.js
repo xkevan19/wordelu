@@ -711,7 +711,7 @@
         const timeBonus = Math.floor(this.timeLeft / 4);
         this.score += timeBonus;
         this.updateScoreDisplay();
-        this.showToast(`⏱️ Time Bonus: +${timeBonus} points!`);
+        showToast(`⏱️ Time Bonus: +${timeBonus} points!`);
       }
 
       console.log(
