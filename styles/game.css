@@ -1,0 +1,155 @@
+body {
+    margin: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-family: 'Inter', sans-serif;
+    background-color: #121213;
+    color: #D1D5DB;
+}
+
+#menu-container,
+#game-container {
+    min-height: 100vh;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+.key.correct {
+    background-color: #538D4E !important;
+    color: white;
+    border-color: #538D4E !important;
+}
+
+.key.present {
+    background-color: #B59F3B !important;
+    color: white;
+    border-color: #B59F3B !important;
+}
+
+.key.absent {
+    background-color: #3A3A3C !important;
+    color: white;
+    border-color: #3A3A3C !important;
+}
+
+#message-box {
+    z-index: 50;
+}
+
+#toast-container {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.toast {
+    background-color: #1A1A1B;
+    color: #FFFFFF;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    border: 1px solid #3A3A3C;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.achievement-icon {
+    font-size: 1.8em;
+    margin-right: 0.75em;
+    flex-shrink: 0;
+}
+
+.locked-achievement {
+    opacity: 0.4;
+    filter: grayscale(80%);
+}
+
+.completed-achievement {
+    color: #FBBF24;
+    opacity: 1;
+    filter: none;
+}
+
+.achievement-card-base {
+    background-color: #27272A;
+    border: 1px solid #3A3A3C;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.achievement-card-base:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+input,
+select,
+button {
+    transition: all 0.2s ease-in-out;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #6366F1;
+    box-shadow: 0 0 0 2px #6366F1;
+}
+
+.select-arrow {
+    color: #9CA3AF;
+}
+
+#keyboard .key {
+    background-color: #818384;
+    border: none;
+    border-radius: 0.25rem;
+    color: #FFFFFF;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    text-transform: uppercase;
+    padding: 0;
+}
+
+#keyboard .key:hover {
+    background-color: #6d6e6f;
+}
