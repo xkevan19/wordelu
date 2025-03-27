@@ -139,7 +139,6 @@ async function initializeSupabase() {
     }
 
     _supabase = createClient(config.url, config.key);
-    console.log("Supabase Client Initialized (from auth.js).");
 
     if (authContainer) {
       enableAuthForms();
@@ -368,7 +367,7 @@ function setupAuthFormListeners() {
             error.message.includes(
               "duplicate key value violates unique constraint"
             ) &&
-            error.message.includes("username") 
+            error.message.includes("username")
           )
             userMessage =
               "This username is already taken. Please choose another.";
@@ -378,7 +377,7 @@ function setupAuthFormListeners() {
             )
           )
             userMessage =
-              "An account or profile constraint failed. Please check your details."; 
+              "An account or profile constraint failed. Please check your details.";
           showMessage(signupMessage, userMessage);
         } else if (data.user) {
           if (data.user.identities && data.user.identities.length === 0) {
@@ -387,7 +386,7 @@ function setupAuthFormListeners() {
               "Sign up successful! Please check your email to confirm your account.",
               false
             );
-            signupForm.reset(); 
+            signupForm.reset();
           } else {
             showMessage(
               signupMessage,
@@ -397,7 +396,7 @@ function setupAuthFormListeners() {
             setTimeout(() => {
               window.location.href = "index.html";
             }, 1500);
-            signupForm.reset(); 
+            signupForm.reset();
           }
         } else {
           showMessage(
@@ -494,11 +493,22 @@ function setupAuthStateListener() {
     const isAuthPage = !!authContainer;
     const isRecovery = window.location.hash.includes("type=recovery");
 
+    console.log(
+      "Auth State Change Detected:",
+      event,
+      "Recovery Hash:",
+      isRecovery,
+      "On Auth Page:",
+      isAuthPage
+    );
+
     if (
       event === "PASSWORD_RECOVERY" ||
       (event === "SIGNED_IN" && isRecovery)
     ) {
+      console.log("Password recovery event or signed in with recovery hash.");
       if (isAuthPage && resetUpdateSection) {
+        console.log("Showing reset update section.");
         clearMessages();
         resetUpdateSection.style.display = "flex";
         if (authContainer) authContainer.style.display = "none";
@@ -508,16 +518,27 @@ function setupAuthStateListener() {
           "",
           window.location.pathname + window.location.search
         );
+      } else {
+        console.warn(
+          "Not showing reset section. isAuthPage:",
+          isAuthPage,
+          "resetUpdateSection exists:",
+          !!resetUpdateSection
+        );
       }
     } else if (event === "SIGNED_IN") {
+      console.log("Signed in event.");
       if (window.location.pathname.includes("auth.html") && !isRecovery) {
+        console.log("Redirecting from auth.html to index.html after sign in.");
         window.location.href = "index.html";
       }
       if (isAuthPage && authContainer) authContainer.style.display = "block";
       if (isAuthPage && resetUpdateSection)
         resetUpdateSection.style.display = "none";
     } else if (event === "SIGNED_OUT") {
+      console.log("Signed out event.");
       if (!window.location.pathname.includes("auth.html")) {
+        console.log("Redirecting to auth.html after sign out.");
         window.location.href = "auth.html";
         return;
       }
@@ -527,7 +548,11 @@ function setupAuthStateListener() {
         showLoginForm();
       }
     } else if (event === "INITIAL_SESSION") {
+      console.log("Initial session event.");
       if (isRecovery && isAuthPage && resetUpdateSection) {
+        console.log(
+          "Initial session with recovery hash, showing reset section."
+        );
         clearMessages();
         resetUpdateSection.style.display = "flex";
         if (authContainer) authContainer.style.display = "none";
@@ -538,11 +563,18 @@ function setupAuthStateListener() {
           window.location.pathname + window.location.search
         );
       } else if (session && window.location.pathname.includes("auth.html")) {
+        console.log(
+          "Initial session exists, redirecting from auth.html to index.html."
+        );
         window.location.href = "index.html";
       } else if (!session && !window.location.pathname.includes("auth.html")) {
+        console.log("Initial session missing, redirecting to auth.html.");
         window.location.href = "auth.html";
         return;
       } else if (!session && isAuthPage) {
+        console.log(
+          "Initial session missing on auth page, showing login form."
+        );
         if (authContainer) authContainer.style.display = "block";
         if (resetUpdateSection) resetUpdateSection.style.display = "none";
         showLoginForm();
