@@ -737,42 +737,44 @@
     }
 
     checkAchievements() {
-        const newlyUnlocked = [];
-        const checkAndUnlock = (achievement) => {
-            if (achievement && !this.achievements[achievement.id]) {
-                let conditionMet = false;
-                switch (achievement.id) {
-                    case ACHIEVEMENTS.FIRST_VICTORY.id:
-                        conditionMet = this.gameWon && this.playerStats.totalWins === 1;
-                        break;
-                    case ACHIEVEMENTS.PERFECT_GAME.id:
-                        conditionMet = this.gameWon && this.currentRow === 0;
-                        break;
-                    case ACHIEVEMENTS.HARD_MODE_MASTER.id:
-                        conditionMet = this.gameWon && this.difficulty === "hard";
-                        break;
-                    case ACHIEVEMENTS.CATEGORY_CHAMPION.id:
-                        const allCategories = Object.keys(WORDS);
-                        conditionMet = this.gameWon && allCategories.every((cat) => this.playerStats.categoriesWon.has(cat));
-                        break;
-                    case ACHIEVEMENTS.TIME_MASTER.id:
-                        const timeThreshold = Math.floor(CONFIG.HARD_MODE_DURATION / 2);
-                        conditionMet = this.gameWon && this.difficulty === "hard" && this.timeLeft >= timeThreshold;
-                        break;
-                }
+      const self = this;
+      const newlyUnlocked = [];
 
-                if (conditionMet) {
-                    this.achievements[achievement.id] = true;
-                    newlyUnlocked.push(achievement);
-                    this.showToast(`🏆 Achievement Unlocked: ${achievement.name}`); // 'this' is correct here
-                }
-            }
-        };
+      const checkAndUnlock = (achievement) => {
+          if (achievement && !self.achievements[achievement.id]) { 
+              let conditionMet = false;
+              switch (achievement.id) {
+                  case ACHIEVEMENTS.FIRST_VICTORY.id:
+                      conditionMet = self.gameWon && self.playerStats.totalWins === 1; 
+                      break;
+                  case ACHIEVEMENTS.PERFECT_GAME.id:
+                      conditionMet = self.gameWon && self.currentRow === 0; 
+                      break;
+                  case ACHIEVEMENTS.HARD_MODE_MASTER.id:
+                      conditionMet = self.gameWon && self.difficulty === "hard"; 
+                      break;
+                  case ACHIEVEMENTS.CATEGORY_CHAMPION.id:
+                      const allCategories = Object.keys(WORDS);
+                      conditionMet = self.gameWon && allCategories.every((cat) => self.playerStats.categoriesWon.has(cat)); 
+                      break;
+                  case ACHIEVEMENTS.TIME_MASTER.id:
+                      const timeThreshold = Math.floor(CONFIG.HARD_MODE_DURATION / 2);
+                      conditionMet = self.gameWon && self.difficulty === "hard" && self.timeLeft >= timeThreshold; 
+                      break;
+              }
 
-        Object.values(ACHIEVEMENTS).forEach(achievement => checkAndUnlock(achievement)); // Use arrow function
+              if (conditionMet) {
+                  self.achievements[achievement.id] = true; 
+                  newlyUnlocked.push(achievement);
+                  self.showToast(`🏆 Achievement Unlocked: ${achievement.name}`); 
+              }
+          }
+      };
 
-        return newlyUnlocked;
-    }
+      Object.values(ACHIEVEMENTS).forEach(achievement => checkAndUnlock(achievement));
+
+      return newlyUnlocked;
+  }
 
     updateTimerDisplay() {
       const timerEl = document.getElementById("timer");
