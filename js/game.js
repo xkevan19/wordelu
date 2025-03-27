@@ -160,15 +160,117 @@
       icon: "⏱️",
     },
   };
+  ACHIEVEMENTS.TIME_MASTER.description = `Won a hard mode game with at least ${Math.floor(
+    CONFIG.HARD_MODE_DURATION / 2
+  )} seconds remaining`;
+
+  let _supabase;
+  let currentUser = null;
+  let userProfile = null;
+
+  async function initializeSupabase() {
+    try {
+      const response = await fetch("/.netlify/functions/get-supabase-config");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Supabase config: ${response.status}`);
+      }
+      const config = await response.json();
+      if (!config.url || !config.key) {
+        throw new Error("Invalid Supabase config received");
+      }
+      _supabase = supabase.createClient(config.url, config.key);
+
+      const {
+        data: { session },
+      } = await _supabase.auth.getSession();
+      currentUser = session?.user ?? null;
+      if (currentUser) {
+        await fetchUserProfile(currentUser.id);
+      }
+      console.log("Supabase initialized. User:", currentUser?.email || "Guest");
+
+      _supabase.auth.onAuthStateChange(async (_event, session) => {
+        const prevUser = currentUser;
+        currentUser = session?.user ?? null;
+        if (currentUser && currentUser.id !== prevUser?.id) {
+          await fetchUserProfile(currentUser.id);
+          console.log(
+            "Auth state changed. New user:",
+            currentUser?.email || "Guest"
+          );
+        } else if (!currentUser && prevUser) {
+          userProfile = null;
+          console.log("User logged out.");
+        }
+      });
+
+      await loadAndDisplayInitialData();
+    } catch (error) {
+      console.error("Supabase Initialization Error:", error);
+      showToast(`Error initializing: ${error.message}`);
+    }
+  }
+
+  async function fetchUserProfile(userId) {
+    if (!_supabase || !userId) return;
+    try {
+      const { data, error } = await _supabase
+        .from("profiles")
+        .select("username")
+        .eq("uuid", userId)
+        .single();
+      if (error) throw error;
+      userProfile = data;
+      const playerNameInput = document.getElementById("player-name");
+      if (playerNameInput && userProfile?.username) {
+        playerNameInput.value = userProfile.username;
+        playerNameInput.disabled = true;
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      userProfile = null;
+    }
+  }
+
+  function showToast(message, duration = CONFIG.TOAST_DURATION) {
+    const container = document.getElementById("toast-container");
+    if (!container) {
+      console.error("Toast container not found!");
+      return;
+    }
+
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    toast.offsetHeight;
+
+    toast.classList.add("show");
+
+    setTimeout(() => {
+      toast.classList.remove("show");
+      toast.addEventListener(
+        "transitionend",
+        () => {
+          if (toast.parentNode === container) {
+            container.removeChild(toast);
+          }
+        },
+        { once: true }
+      );
+    }, duration);
+  }
 
   class WordleGame {
-    constructor(playerName, difficulty, category) {
+    constructor(playerName, difficulty, category, userId) {
       this.WORD_LENGTH = CONFIG.WORD_LENGTH;
       this.MAX_ATTEMPTS = CONFIG.MAX_ATTEMPTS;
       this.score = 0;
       this.playerName = playerName;
       this.difficulty = difficulty;
       this.category = category;
+      this.userId = userId;
       this.timeLeft =
         this.difficulty === "hard" ? CONFIG.HARD_MODE_DURATION : null;
       this.timerInterval = null;
@@ -214,22 +316,39 @@
         }),
       };
 
-      this.playerStats = this.loadPlayerStats();
-      this.leaderboard = this.loadLeaderboard();
-      this.achievements = this.loadAchievements();
+      this.playerStats = {
+        totalGamesPlayed: 0,
+        totalWins: 0,
+        categoriesWon: new Set(),
+        hardModeWins: 0,
+      };
+      this.achievements = {};
 
       this.boundHandleKeyDown = this.handleKeyDown.bind(this);
       this.boundHandleModalKeyDown = this.handleModalKeyDown.bind(this);
 
-      this.createGameBoard();
-      this.createKeyboard();
-      this.setupEventListeners();
-      this.updateDifficultyDisplay();
-      this.updateScoreDisplay();
-      this.updateTimerDisplay();
-      if (this.timeLeft !== null) {
-        this.startTimer();
-      }
+      this.initGameData()
+        .then(() => {
+          this.createGameBoard();
+          this.createKeyboard();
+          this.setupEventListeners();
+          this.updateDifficultyDisplay();
+          this.updateScoreDisplay();
+          this.updateTimerDisplay();
+          if (this.timeLeft !== null) {
+            this.startTimer();
+          }
+        })
+        .catch((error) => {
+          console.error("Error initializing game data:", error);
+          showToast(
+            "Error loading game data. Some features might be unavailable."
+          );
+          this.createGameBoard();
+          this.createKeyboard();
+          this.setupEventListeners();
+          this.updateDifficultyDisplay();
+        });
 
       document
         .getElementById("back-to-menu-btn")
@@ -238,10 +357,40 @@
         });
     }
 
+    async initGameData() {
+      if (this.userId && _supabase) {
+        try {
+          const [stats, achievements] = await Promise.all([
+            this.fetchSupabaseStats(),
+            this.fetchSupabaseAchievements(),
+          ]);
+          this.playerStats = stats;
+          this.achievements = achievements;
+          console.log("Fetched Supabase data for user:", this.userId);
+          updateStatisticsDisplayGlobal(this.playerStats);
+          updateAchievementsDisplayGlobal(this.achievements);
+        } catch (error) {
+          console.error("Failed to fetch Supabase data:", error);
+          showToast("Could not load your stats/achievements from server.");
+        }
+      } else {
+        this.playerStats = this.loadData("wordlePlayerStats", {
+          totalGamesPlayed: 0,
+          totalWins: 0,
+          categoriesWon: new Set(),
+          hardModeWins: 0,
+        });
+        this.achievements = this.loadData("wordleAchievements", {});
+        console.log("Loaded LocalStorage data for Guest");
+        updateStatisticsDisplayGlobal(this.playerStats);
+        updateAchievementsDisplayGlobal(this.achievements);
+      }
+    }
+
     selectRandomWord() {
       const categoryWords = WORDS[this.category];
       if (!categoryWords || categoryWords.length === 0) {
-        console.error(
+        console.warn(
           `No words found for category: ${this.category}. Falling back to general.`
         );
         return WORDS.general[
@@ -292,6 +441,9 @@
           keyButton.className = `key bg-key-bg text-white px-3 py-2 rounded hover:bg-key-hover transition duration-200 h-key-height text-sm ${
             key === "ENTER" || key === "⌫" ? "w-enter-width" : "w-key-width"
           }`;
+          if (key === "ENTER") keyButton.classList.add("key-enter");
+          if (key === "⌫") keyButton.classList.add("key-backspace");
+
           rowElement.appendChild(keyButton);
         });
         fragment.appendChild(rowElement);
@@ -300,20 +452,28 @@
     }
 
     setupEventListeners() {
-      document.getElementById("keyboard").addEventListener("click", (event) => {
+      const keyboardElement = document.getElementById("keyboard");
+      if (keyboardElement.listener) {
+        keyboardElement.removeEventListener("click", keyboardElement.listener);
+      }
+      keyboardElement.listener = (event) => {
         if (event.target.classList.contains("key")) {
           this.handleKeyPress(event.target.dataset.key);
         }
-      });
+      };
+      keyboardElement.addEventListener("click", keyboardElement.listener);
+
+      document.removeEventListener("keydown", this.boundHandleKeyDown);
       document.addEventListener("keydown", this.boundHandleKeyDown);
     }
 
     handleKeyDown(event) {
       if (this.gameOver) return;
-      if (!document.getElementById("message-box").classList.contains("hidden"))
+      if (!document.getElementById("message-box")?.classList.contains("hidden"))
         return;
 
       const key = event.key.toUpperCase();
+
       if (/^[A-Z]$/.test(key)) {
         this.handleKeyPress(key);
       } else if (event.key === "Enter") {
@@ -340,9 +500,11 @@
         const cell = document.getElementById(
           `cell-${this.currentRow}-${this.currentCol}`
         );
+        if (!cell) return;
         cell.textContent = letter;
         cell.classList.add("scale-110");
         setTimeout(() => cell.classList.remove("scale-110"), 100);
+
         this.currentGuess.push(letter);
         this.currentCol++;
         this.playSound("type");
@@ -355,6 +517,7 @@
         const cell = document.getElementById(
           `cell-${this.currentRow}-${this.currentCol}`
         );
+        if (!cell) return;
         cell.textContent = "";
         this.currentGuess.pop();
       }
@@ -369,22 +532,25 @@
       }
 
       const guess = this.currentGuess.join("");
+
       const result = this.checkGuess(guess);
       const currentRowToUpdate = this.currentRow;
 
       this.updateRowColors(result, currentRowToUpdate);
       this.updateKeyboardColors(guess, result);
 
+      const animationDuration = this.WORD_LENGTH * 200 + 100;
+
       if (guess === this.targetWord) {
-        setTimeout(() => this.handleWin(), this.WORD_LENGTH * 200 + 100);
+        setTimeout(() => this.handleWin(), animationDuration);
       } else {
         this.currentRow++;
         if (this.currentRow >= this.MAX_ATTEMPTS) {
-          setTimeout(() => this.handleLose(), this.WORD_LENGTH * 200 + 100);
+          setTimeout(() => this.handleLose(), animationDuration);
         } else {
-          this.playSound("wrong");
           this.currentGuess = [];
           this.currentCol = 0;
+          this.playSound("wrong");
         }
       }
     }
@@ -393,12 +559,14 @@
       const result = new Array(this.WORD_LENGTH).fill("absent");
       const targetLetters = this.targetWord.split("");
       const guessLetters = guess.split("");
+      let guessScore = 0;
 
       for (let i = 0; i < this.WORD_LENGTH; i++) {
         if (guessLetters[i] === targetLetters[i]) {
           result[i] = "correct";
           targetLetters[i] = null;
           guessLetters[i] = null;
+          guessScore += 2;
         }
       }
 
@@ -409,26 +577,23 @@
             result[i] = "present";
             targetLetters[index] = null;
             guessLetters[i] = null;
+            guessScore += 1;
           }
         }
       }
 
-      const points = this.calculatePoints(guess, result);
-
-      let finalPointsForGuess = points;
-      const isCorrectGuess = result.every((r) => r === "correct");
-      const isFirstAttempt = this.currentRow === 0;
-
-      if (isCorrectGuess && isFirstAttempt) {
-        finalPointsForGuess *= 2;
-        console.log(
-          "First attempt correct! Doubling points for this guess to:",
-          finalPointsForGuess
-        );
+      if (this.currentRow === 0 && guess === this.targetWord) {
+        guessScore = 20;
+        console.log("Perfect first guess! Score set to 20 for this guess.");
         this.showToast("✨ Perfect First Guess! +20 Points! ✨");
       }
 
-      this.score += finalPointsForGuess;
+      console.log(
+        `Guess: ${guess}, Result: ${result.join(
+          ","
+        )}, Score added: ${guessScore}`
+      );
+      this.score += guessScore;
       this.updateScoreDisplay();
 
       return result;
@@ -439,19 +604,17 @@
       const uniqueLettersAwarded = new Set();
 
       if (result.every((r) => r === "correct")) {
-        return 10;
+        if (this.currentRow === 0) {
+          return 20;
+        }
       }
 
       for (let i = 0; i < guess.length; i++) {
         const letter = guess[i];
-        if (!uniqueLettersAwarded.has(letter)) {
-          if (result[i] === "correct") {
-            points += 2;
-            uniqueLettersAwarded.add(letter);
-          } else if (result[i] === "present") {
-            points += 1;
-            uniqueLettersAwarded.add(letter);
-          }
+        if (result[i] === "correct") {
+          points += 2;
+        } else if (result[i] === "present") {
+          points += 1;
         }
       }
       return points;
@@ -466,10 +629,11 @@
               "border-gray-600",
               "bg-correct",
               "bg-present",
-              "bg-absent"
+              "bg-absent",
+              "text-white"
             );
             cell.classList.add(`bg-${colors[index]}`);
-            cell.classList.add("text-white");
+            cell.classList.add("text-white", "border-transparent");
           }
         }, index * 200);
       }
@@ -484,24 +648,21 @@
         );
 
         if (keyButton) {
-          const currentStatusIsCorrect =
-            keyButton.classList.contains("correct");
-          const currentStatusIsPresent =
-            keyButton.classList.contains("present");
+          const isCorrect = keyButton.classList.contains("correct");
+          const isPresent = keyButton.classList.contains("present");
+          const isAbsent = keyButton.classList.contains("absent");
 
           if (status === "correct") {
-            keyButton.classList.remove("present", "absent");
-            keyButton.classList.add("correct");
-          } else if (status === "present" && !currentStatusIsCorrect) {
-            keyButton.classList.remove("absent");
-            keyButton.classList.add("present");
-          } else if (
-            status === "absent" &&
-            !currentStatusIsCorrect &&
-            !currentStatusIsPresent
-          ) {
-            keyButton.classList.add("absent");
+            keyButton.classList.remove("present", "absent", "bg-key-bg");
+            keyButton.classList.add("correct", "bg-correct");
+          } else if (status === "present" && !isCorrect) {
+            keyButton.classList.remove("absent", "bg-key-bg");
+            keyButton.classList.add("present", "bg-present");
+          } else if (status === "absent" && !isCorrect && !isPresent) {
+            keyButton.classList.remove("bg-key-bg");
+            keyButton.classList.add("absent", "bg-absent");
           }
+          keyButton.classList.add("text-white");
         }
       }
     }
@@ -514,41 +675,81 @@
       }
     }
 
-    handleWin() {
+    async handleWin() {
       this.gameOver = true;
       this.gameWon = true;
       clearInterval(this.timerInterval);
 
       if (this.difficulty === "hard" && this.timeLeft > 0) {
-        this.score += Math.floor(this.timeLeft / 4);
+        const timeBonus = Math.floor(this.timeLeft / 4);
+        this.score += timeBonus;
         this.updateScoreDisplay();
+        this.showToast(`⏱️ Time Bonus: +${timeBonus} points!`);
       }
 
+      this.playerStats.totalGamesPlayed++;
       this.playerStats.totalWins++;
       this.playerStats.categoriesWon.add(this.category);
       if (this.difficulty === "hard") this.playerStats.hardModeWins++;
-      this.playerStats.totalGamesPlayed++;
 
-      this.checkAchievements();
-      this.addScoreToLeaderboard();
+      const unlockedAchievements = this.checkAchievements();
 
-      this.savePlayerStats();
-      this.saveLeaderboard();
-      this.saveAchievements();
+      if (this.userId && _supabase) {
+        try {
+          await Promise.all([
+            this.updateSupabaseStats(),
+            this.submitScoreToSupabase(),
+            ...unlockedAchievements.map((ach) =>
+              this.unlockSupabaseAchievement(ach)
+            ),
+          ]);
+          console.log("Game win data saved to Supabase.");
+          await loadAndDisplayLeaderboard();
+        } catch (error) {
+          console.error("Failed to save game win data to Supabase:", error);
+          showToast("Error saving game results to server.");
+          this.saveData("wordlePlayerStats", this.playerStats);
+          this.saveData("wordleAchievements", this.achievements);
+          this.addScoreToLeaderboard();
+        }
+      } else {
+        this.saveData("wordlePlayerStats", this.playerStats);
+        this.saveData("wordleAchievements", this.achievements);
+        this.addScoreToLeaderboard();
+        console.log("Game win data saved to LocalStorage for Guest.");
+      }
+
+      updateStatisticsDisplayGlobal(this.playerStats);
+      updateAchievementsDisplayGlobal(this.achievements);
 
       this.playSound("win");
       this.showMessage(
         "Congratulations!",
-        `You guessed the word: ${this.targetWord}. Score: ${this.score}`
+        `You guessed the word: ${this.targetWord}. Final Score: ${this.score}`
       );
     }
 
-    handleLose() {
+    async handleLose() {
       this.gameOver = true;
       clearInterval(this.timerInterval);
 
       this.playerStats.totalGamesPlayed++;
-      this.savePlayerStats();
+
+      if (this.userId && _supabase) {
+        try {
+          await this.updateSupabaseStats();
+          console.log("Game loss stats updated in Supabase.");
+        } catch (error) {
+          console.error("Failed to update Supabase stats on loss:", error);
+          showToast("Error saving game stats to server.");
+          this.saveData("wordlePlayerStats", this.playerStats);
+        }
+      } else {
+        this.saveData("wordlePlayerStats", this.playerStats);
+        console.log("Game loss stats saved to LocalStorage for Guest.");
+      }
+
+      updateStatisticsDisplayGlobal(this.playerStats);
 
       this.playSound("lose");
       this.showMessage(
@@ -557,71 +758,241 @@
       );
     }
 
-    restartGame() {
-      this.resetGameState();
-      this.createGameBoard();
-      this.createKeyboard();
-      this.updateScoreDisplay();
-      this.updateTimerDisplay();
-      this.updateDifficultyDisplay();
-      if (this.timeLeft !== null) {
-        this.startTimer();
+    async fetchSupabaseStats() {
+      if (!this.userId || !_supabase) return this.playerStats;
+
+      const { data, error } = await _supabase
+        .from("game_stats")
+        .select(
+          "total_games_played, total_wins, hard_mode_wins, categories_won"
+        )
+        .eq("user_id", this.userId)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error fetching Supabase stats:", error);
+        throw error;
       }
-      document.getElementById("message-box").classList.add("hidden");
-    }
 
-    resetGameState() {
-      clearInterval(this.timerInterval);
-      this.currentRow = 0;
-      this.currentCol = 0;
-      this.currentGuess = [];
-      this.gameOver = false;
-      this.gameWon = false;
-      this.targetWord = this.selectRandomWord();
-      this.timeLeft =
-        this.difficulty === "hard" ? CONFIG.HARD_MODE_DURATION : null;
-      this.score = 0;
-      this.guessedLetters = new Set();
-    }
-
-    resetGameToMenu() {
-      this.destroy();
-      document.getElementById("game-container").classList.add("hidden");
-      document.getElementById("menu-container").classList.remove("hidden");
-    }
-
-    destroy() {
-      clearInterval(this.timerInterval);
-      document.removeEventListener("keydown", this.boundHandleKeyDown);
-      const messageBox = document.getElementById("message-box");
-      if (messageBox) {
-        messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
+      if (data) {
+        return {
+          ...data,
+          categoriesWon: new Set(data.categories_won || []),
+        };
+      } else {
+        return {
+          totalGamesPlayed: 0,
+          totalWins: 0,
+          categoriesWon: new Set(),
+          hardModeWins: 0,
+        };
       }
-      Object.values(this.sounds).forEach((sound) => {
-        if (sound && typeof sound.unload === "function") {
-          // sound.unload(); // Consider if unloading is truly needed
+    }
+
+    async updateSupabaseStats() {
+      if (!this.userId || !_supabase) return;
+
+      const statsToSave = {
+        user_id: this.userId,
+        total_games_played: this.playerStats.totalGamesPlayed,
+        total_wins: this.playerStats.totalWins,
+        hard_mode_wins: this.playerStats.hardModeWins,
+        categories_won: Array.from(this.playerStats.categoriesWon),
+      };
+
+      const { error } = await _supabase
+        .from("game_stats")
+        .upsert(statsToSave, { onConflict: "user_id" });
+
+      if (error) {
+        console.error("Error updating Supabase stats:", error);
+        throw error;
+      }
+    }
+
+    async fetchSupabaseAchievements() {
+      if (!this.userId || !_supabase) return {};
+
+      const { data, error } = await _supabase
+        .from("achievements")
+        .select("achievement_id")
+        .eq("user_id", this.userId);
+
+      if (error) {
+        console.error("Error fetching Supabase achievements:", error);
+        throw error;
+      }
+
+      const achievementsMap = {};
+      if (data) {
+        data.forEach((ach) => {
+          achievementsMap[ach.achievement_id] = true;
+        });
+      }
+      return achievementsMap;
+    }
+
+    async unlockSupabaseAchievement(achievement) {
+      if (!this.userId || !_supabase || !achievement?.id) return;
+
+      const { error } = await _supabase
+        .from("achievements")
+        .insert({
+          user_id: this.userId,
+          achievement_id: achievement.id,
+        })
+        .select()
+        .single();
+
+      if (error && error.code !== "23505") {
+        console.error(
+          `Error unlocking Supabase achievement ${achievement.id}:`,
+          error
+        );
+      } else if (!error) {
+        console.log(`Achievement ${achievement.id} unlocked in Supabase.`);
+      }
+    }
+
+    async submitScoreToSupabase() {
+      if (!_supabase) return;
+
+      const scoreData = {
+        user_id: this.userId,
+        player_name: this.playerName,
+        score: this.score,
+        difficulty: this.difficulty,
+        category: this.category,
+      };
+
+      const { error } = await _supabase.from("leaderboard").insert(scoreData);
+
+      if (error) {
+        console.error("Error submitting score to Supabase leaderboard:", error);
+        throw error;
+      }
+    }
+
+    loadData(key, defaultValue) {
+      try {
+        const data = localStorage.getItem(key);
+        if (data) {
+          const parsed = JSON.parse(data);
+          if (
+            key === "wordlePlayerStats" &&
+            parsed.categoriesWon &&
+            Array.isArray(parsed.categoriesWon)
+          ) {
+            parsed.categoriesWon = new Set(parsed.categoriesWon);
+          }
+          return parsed;
         }
-      });
-      console.log("Game instance destroyed and listeners removed.");
+      } catch (error) {
+        console.error(`Error loading ${key} from LocalStorage:`, error);
+      }
+      if (
+        key === "wordlePlayerStats" &&
+        defaultValue.categoriesWon &&
+        Array.isArray(defaultValue.categoriesWon)
+      ) {
+        defaultValue.categoriesWon = new Set(defaultValue.categoriesWon);
+      }
+      return defaultValue;
     }
 
-    startTimer() {
-      clearInterval(this.timerInterval);
-      this.updateTimerDisplay();
-      this.timerInterval = setInterval(() => {
-        this.timeLeft--;
-        this.updateTimerDisplay();
-        if (this.timeLeft <= 0) {
-          clearInterval(this.timerInterval);
-          if (!this.gameOver) {
-            this.handleLose();
+    saveData(key, data) {
+      try {
+        let dataToSave = data;
+        if (key === "wordlePlayerStats" && data.categoriesWon instanceof Set) {
+          dataToSave = {
+            ...data,
+            categoriesWon: Array.from(data.categoriesWon),
+          };
+        }
+        localStorage.setItem(key, JSON.stringify(dataToSave));
+      } catch (error) {
+        console.error(`Error saving ${key} to LocalStorage:`, error);
+      }
+    }
+
+    loadLeaderboard() {
+      return this.loadData("wordleLeaderboard", []);
+    }
+    saveLeaderboard(leaderboard) {
+      this.saveData("wordleLeaderboard", leaderboard);
+    }
+    addScoreToLeaderboard() {
+      if (this.userId) return;
+
+      const localLeaderboard = this.loadLeaderboard();
+      const newScore = {
+        name: this.playerName,
+        score: this.score,
+        difficulty: this.difficulty,
+        category: this.category,
+      };
+      localLeaderboard.push(newScore);
+      localLeaderboard.sort((a, b) => b.score - a.score);
+      const trimmedLeaderboard = localLeaderboard.slice(
+        0,
+        CONFIG.LEADERBOARD_SIZE
+      );
+      this.saveLeaderboard(trimmedLeaderboard);
+    }
+
+    checkAchievements() {
+      const newlyUnlocked = [];
+      const checkAndUnlock = (achievement) => {
+        if (achievement && !this.achievements[achievement.id]) {
+          let conditionMet = false;
+          switch (achievement.id) {
+            case ACHIEVEMENTS.FIRST_VICTORY.id:
+              conditionMet = this.gameWon && this.playerStats.totalWins === 1;
+              break;
+            case ACHIEVEMENTS.PERFECT_GAME.id:
+              conditionMet = this.gameWon && this.currentRow === 0;
+              break;
+            case ACHIEVEMENTS.HARD_MODE_MASTER.id:
+              conditionMet = this.gameWon && this.difficulty === "hard";
+              break;
+            case ACHIEVEMENTS.CATEGORY_CHAMPION.id:
+              const allCategories = Object.keys(WORDS);
+              conditionMet =
+                this.gameWon &&
+                allCategories.every((cat) =>
+                  this.playerStats.categoriesWon.has(cat)
+                );
+              break;
+            case ACHIEVEMENTS.TIME_MASTER.id:
+              const timeThreshold = Math.floor(CONFIG.HARD_MODE_DURATION / 2);
+              conditionMet =
+                this.gameWon &&
+                this.difficulty === "hard" &&
+                this.timeLeft >= timeThreshold;
+              break;
+          }
+
+          if (conditionMet) {
+            this.achievements[achievement.id] = true;
+            newlyUnlocked.push(achievement);
+            this.showToast(`🏆 Achievement Unlocked: ${achievement.name}`);
           }
         }
-      }, 1000);
+      };
+
+      Object.values(ACHIEVEMENTS).forEach(checkAndUnlock);
+      return newlyUnlocked;
+    }
+
+    unlockAchievement(achievement) {
+      if (achievement && achievement.id && !this.achievements[achievement.id]) {
+        this.achievements[achievement.id] = true;
+      }
     }
 
     updateTimerDisplay() {
       const timerEl = document.getElementById("timer");
+      if (!timerEl) return;
       if (this.difficulty === "hard" && this.timeLeft !== null) {
         timerEl.textContent = `Time: ${this.timeLeft}s`;
         timerEl.classList.toggle(
@@ -633,22 +1004,24 @@
         timerEl.textContent = "";
       }
     }
-
     updateDifficultyDisplay() {
       const difficultyEl = document.getElementById("difficulty-mode");
       if (difficultyEl) {
         difficultyEl.textContent =
           this.difficulty === "easy" ? `Easy Mode` : `Hard Mode`;
+        difficultyEl.className = `text-xl ${
+          this.difficulty === "hard"
+            ? "text-red-400 font-semibold"
+            : "text-green-400"
+        }`;
       }
     }
-
     updateScoreDisplay() {
       const scoreEl = document.getElementById("score");
       if (scoreEl) {
         scoreEl.textContent = `Score: ${this.score}`;
       }
     }
-
     showMessage(title, text) {
       const messageBox = document.getElementById("message-box");
       const messageTitle = document.getElementById("message-title");
@@ -673,25 +1046,33 @@
 
       newGameBtn.focus();
 
+      messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
       messageBox.addEventListener("keydown", this.boundHandleModalKeyDown);
 
-      newGameBtn.onclick = () => {
+      const handleNewGame = () => {
         messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
         messageBox.classList.add("hidden");
         this.restartGame();
+        newGameBtn.removeEventListener("click", handleNewGame);
+        quitBtn.removeEventListener("click", handleQuit);
       };
-
-      quitBtn.onclick = () => {
+      const handleQuit = () => {
         messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
         messageBox.classList.add("hidden");
         this.resetGameToMenu();
+        newGameBtn.removeEventListener("click", handleNewGame);
+        quitBtn.removeEventListener("click", handleQuit);
       };
-    }
 
+      newGameBtn.addEventListener("click", handleNewGame, { once: true });
+      quitBtn.addEventListener("click", handleQuit, { once: true });
+    }
     handleModalKeyDown(event) {
       if (event.key === "Tab") {
         const messageBox = document.getElementById("message-box");
         const focusableElements = messageBox.querySelectorAll("button");
+        if (!focusableElements.length) return;
+
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
 
@@ -711,42 +1092,11 @@
           document.activeElement &&
           typeof document.activeElement.click === "function"
         ) {
-          // document.activeElement.click();
+          if (document.activeElement.tagName === "BUTTON") {
+          }
         }
       } else if (event.key === "Escape") {
-        // Optional: Allow Escape to close modal
       }
-    }
-
-    showToast(message) {
-      const container = document.getElementById("toast-container");
-      if (!container) {
-        console.error("Toast container not found!");
-        return;
-      }
-
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.textContent = message;
-      container.appendChild(toast);
-
-      toast.offsetHeight;
-
-      toast.classList.add("show");
-
-      setTimeout(() => {
-        toast.classList.remove("show");
-
-        toast.addEventListener(
-          "transitionend",
-          () => {
-            if (toast.parentNode === container) {
-              container.removeChild(toast);
-            }
-          },
-          { once: true }
-        );
-      }, CONFIG.TOAST_DURATION);
     }
 
     playSound(soundName) {
@@ -761,151 +1111,84 @@
         console.warn(`Sound "${soundName}" not found.`);
       } else {
         console.warn(
-          `Sound "${soundName}" not loaded. State: ${sound.state()}`
+          `Sound "${soundName}" could not be played. State: ${sound.state()}`
         );
       }
     }
 
-    loadData(key, defaultValue) {
-      try {
-        const data = localStorage.getItem(key);
-        if (data) {
-          const parsed = JSON.parse(data);
-          if (
-            key === "wordlePlayerStats" &&
-            parsed.categoriesWon &&
-            Array.isArray(parsed.categoriesWon)
-          ) {
-            parsed.categoriesWon = new Set(parsed.categoriesWon);
+    restartGame() {
+      this.resetGameState();
+      this.createGameBoard();
+      this.createKeyboard();
+      this.updateScoreDisplay();
+      this.updateTimerDisplay();
+      this.updateDifficultyDisplay();
+      if (this.timeLeft !== null) {
+        this.startTimer();
+      }
+      document.getElementById("message-box").classList.add("hidden");
+      console.log("Game restarted. New word:", this.targetWord);
+    }
+
+    resetGameState() {
+      clearInterval(this.timerInterval);
+      this.currentRow = 0;
+      this.currentCol = 0;
+      this.currentGuess = [];
+      this.gameOver = false;
+      this.gameWon = false;
+      this.targetWord = this.selectRandomWord();
+      this.timeLeft =
+        this.difficulty === "hard" ? CONFIG.HARD_MODE_DURATION : null;
+      this.score = 0;
+      this.guessedLetters = new Set();
+    }
+
+    resetGameToMenu() {
+      this.destroy();
+      document.getElementById("game-container").classList.add("hidden");
+      document.getElementById("menu-container").classList.remove("hidden");
+      loadAndDisplayInitialData();
+      const playerNameInput = document.getElementById("player-name");
+      if (playerNameInput) {
+        playerNameInput.disabled = false;
+        if (!userProfile?.username) {
+          playerNameInput.value = "";
+        }
+        playerNameInput.focus();
+      }
+    }
+
+    destroy() {
+      clearInterval(this.timerInterval);
+      document.removeEventListener("keydown", this.boundHandleKeyDown);
+      const keyboardElement = document.getElementById("keyboard");
+      if (keyboardElement && keyboardElement.listener) {
+        keyboardElement.removeEventListener("click", keyboardElement.listener);
+        delete keyboardElement.listener;
+      }
+      const messageBox = document.getElementById("message-box");
+      if (messageBox) {
+        messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
+        const newGameBtn = document.getElementById("new-game-btn");
+        const quitBtn = document.getElementById("quit-btn");
+      }
+      console.log("Game instance cleaned up.");
+    }
+
+    startTimer() {
+      clearInterval(this.timerInterval);
+      this.updateTimerDisplay();
+      this.timerInterval = setInterval(() => {
+        this.timeLeft--;
+        this.updateTimerDisplay();
+        if (this.timeLeft <= 0) {
+          clearInterval(this.timerInterval);
+          if (!this.gameOver) {
+            this.handleLose();
           }
-          return parsed;
         }
-      } catch (error) {
-        console.error(`Error loading ${key} from LocalStorage:`, error);
-      }
-      return defaultValue;
-    }
-
-    saveData(key, data) {
-      try {
-        let dataToSave = data;
-        if (key === "wordlePlayerStats" && data.categoriesWon instanceof Set) {
-          dataToSave = {
-            ...data,
-            categoriesWon: Array.from(data.categoriesWon),
-          };
-        }
-        localStorage.setItem(key, JSON.stringify(dataToSave));
-      } catch (error) {
-        console.error(`Error saving ${key} to LocalStorage:`, error);
-      }
-    }
-
-    loadLeaderboard() {
-      return this.loadData("wordleLeaderboard", []);
-    }
-    saveLeaderboard() {
-      this.saveData("wordleLeaderboard", this.leaderboard);
-    }
-
-    addScoreToLeaderboard() {
-      const newScore = {
-        name: this.playerName,
-        score: this.score,
-        difficulty: this.difficulty,
-        category: this.category,
-      };
-      this.leaderboard.push(newScore);
-      this.leaderboard.sort((a, b) => b.score - a.score);
-      this.leaderboard = this.leaderboard.slice(0, CONFIG.LEADERBOARD_SIZE);
-      this.saveLeaderboard();
-      this.updateLeaderboardDisplay();
-    }
-
-    updateLeaderboardDisplay() {
-      updateLeaderboardDisplayGlobal(this.leaderboard);
-    }
-
-    loadPlayerStats() {
-      return this.loadData("wordlePlayerStats", {
-        totalGamesPlayed: 0,
-        totalWins: 0,
-        categoriesWon: new Set(),
-        hardModeWins: 0,
-      });
-    }
-    savePlayerStats() {
-      this.saveData("wordlePlayerStats", this.playerStats);
-    }
-
-    updateStatisticsDisplay() {
-      updateStatisticsDisplayGlobal(this.playerStats);
-    }
-
-    loadAchievements() {
-      return this.loadData("wordleAchievements", {});
-    }
-    saveAchievements() {
-      this.saveData("wordleAchievements", this.achievements);
-    }
-
-    checkAchievements() {
-      if (
-        this.gameWon &&
-        this.playerStats.totalWins === 1 &&
-        !this.achievements[ACHIEVEMENTS.FIRST_VICTORY.id]
-      ) {
-        this.unlockAchievement(ACHIEVEMENTS.FIRST_VICTORY);
-      }
-
-      if (
-        this.gameWon &&
-        this.currentRow === 0 &&
-        !this.achievements[ACHIEVEMENTS.PERFECT_GAME.id]
-      ) {
-        this.unlockAchievement(ACHIEVEMENTS.PERFECT_GAME);
-      }
-
-      if (
-        this.gameWon &&
-        this.difficulty === "hard" &&
-        !this.achievements[ACHIEVEMENTS.HARD_MODE_MASTER.id]
-      ) {
-        this.unlockAchievement(ACHIEVEMENTS.HARD_MODE_MASTER);
-      }
-
-      const allCategories = Object.keys(WORDS);
-      if (
-        this.gameWon &&
-        allCategories.every((cat) => this.playerStats.categoriesWon.has(cat)) &&
-        !this.achievements[ACHIEVEMENTS.CATEGORY_CHAMPION.id]
-      ) {
-        this.unlockAchievement(ACHIEVEMENTS.CATEGORY_CHAMPION);
-      }
-
-      const timeThreshold = Math.floor(CONFIG.HARD_MODE_DURATION / 2);
-      ACHIEVEMENTS.TIME_MASTER.description = `Won a hard mode game with at least ${timeThreshold} seconds remaining`;
-      if (
-        this.gameWon &&
-        this.difficulty === "hard" &&
-        this.timeLeft >= timeThreshold &&
-        !this.achievements[ACHIEVEMENTS.TIME_MASTER.id]
-      ) {
-        this.unlockAchievement(ACHIEVEMENTS.TIME_MASTER);
-      }
-    }
-
-    unlockAchievement(achievement) {
-      if (achievement && achievement.id && !this.achievements[achievement.id]) {
-        this.achievements[achievement.id] = true;
-        this.saveAchievements();
-        this.updateAchievementsDisplay();
-        this.showToast(`🏆 Achievement Unlocked: ${achievement.name}`);
-      }
-    }
-
-    updateAchievementsDisplay() {
-      updateAchievementsDisplayGlobal(this.achievements);
+      }, 1000);
     }
   }
 
@@ -923,7 +1206,6 @@
   document
     .getElementById("show-instructions-btn")
     .addEventListener("click", () => showSection("instructions-section"));
-
   document
     .getElementById("back-to-menu-from-sections-btn")
     .addEventListener("click", showMenuFromSections);
@@ -938,26 +1220,17 @@
 
     const sectionToShow = document.getElementById(sectionId);
     if (sectionToShow) sectionToShow.classList.remove("hidden");
+
     document
       .getElementById("back-to-menu-from-sections-btn")
       .classList.remove("hidden");
 
     if (sectionId === "leaderboard-section") {
-      const tempLeaderboard = JSON.parse(
-        localStorage.getItem("wordleLeaderboard") || "[]"
-      );
-      updateLeaderboardDisplayGlobal(tempLeaderboard);
+      loadAndDisplayLeaderboard();
     } else if (sectionId === "statistics-section") {
-      const tempStats = JSON.parse(
-        localStorage.getItem("wordlePlayerStats") || "{}"
-      );
-      tempStats.categoriesWon = new Set(tempStats.categoriesWon || []);
-      updateStatisticsDisplayGlobal(tempStats);
+      loadAndDisplayStatistics();
     } else if (sectionId === "achievements-section") {
-      const tempAchievements = JSON.parse(
-        localStorage.getItem("wordleAchievements") || "{}"
-      );
-      updateAchievementsDisplayGlobal(tempAchievements);
+      loadAndDisplayAchievements();
     }
   }
 
@@ -974,41 +1247,147 @@
     document
       .getElementById("menu-buttons-container")
       .classList.remove("hidden");
-    document.getElementById("player-name").focus();
+
+    const playerNameInput = document.getElementById("player-name");
+    if (playerNameInput) {
+      playerNameInput.disabled = !!(currentUser && userProfile?.username);
+      if (currentUser && userProfile?.username) {
+        playerNameInput.value = userProfile.username;
+      } else {
+      }
+      playerNameInput.focus();
+    }
   }
 
-  function updateLeaderboardDisplayGlobal(leaderboard) {
+  async function loadAndDisplayInitialData() {
+    await Promise.all([
+      loadAndDisplayLeaderboard(),
+      loadAndDisplayStatistics(),
+      loadAndDisplayAchievements(),
+    ]);
+  }
+
+  async function loadAndDisplayLeaderboard() {
+    const leaderboardBody = document.getElementById("leaderboard-body");
+    if (!leaderboardBody) return;
+    leaderboardBody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-text-muted">Loading Leaderboard...</td></tr>`;
+
+    try {
+      if (!_supabase) {
+        throw new Error("Supabase client not available.");
+      }
+      const { data, error } = await _supabase
+        .from("leaderboard")
+        .select(
+          `
+                  player_name,
+                  score,
+                  difficulty,
+                  category,
+                  user_id,
+                  profile:profiles ( username )
+              `
+        )
+        .order("score", { ascending: false })
+        .limit(CONFIG.LEADERBOARD_SIZE);
+
+      if (error) throw error;
+
+      updateLeaderboardDisplayGlobal(data || []);
+    } catch (error) {
+      console.error("Error loading leaderboard:", error);
+      leaderboardBody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-error">Failed to load leaderboard.</td></tr>`;
+    }
+  }
+
+  function updateLeaderboardDisplayGlobal(
+    leaderboardData = [],
+    isLocalFallback = false
+  ) {
     const leaderboardBody = document.getElementById("leaderboard-body");
     if (!leaderboardBody) return;
     leaderboardBody.innerHTML = "";
     const fragment = document.createDocumentFragment();
 
-    if (!leaderboard || leaderboard.length === 0) {
+    if (!leaderboardData || leaderboardData.length === 0) {
       const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="5" class="px-4 py-4 text-center text-text-muted">No scores yet! Play a game.</td>`;
+      row.innerHTML = `<td colspan="5" class="px-4 py-4 text-center text-text-muted">No scores yet! Play a game.${
+        isLocalFallback ? " (Local Data)" : ""
+      }</td>`;
       fragment.appendChild(row);
     } else {
-      const sortedLeaderboard = [...leaderboard].sort(
-        (a, b) => b.score - a.score
-      );
-
-      sortedLeaderboard.forEach((entry, index) => {
+      leaderboardData.forEach((entry, index) => {
+        const displayName =
+          entry.profile?.username || entry.player_name || "Guest";
         const row = document.createElement("tr");
         row.className = index % 2 === 0 ? "bg-input-bg/50" : "";
         row.innerHTML = `
-                      <td class="px-4 py-2 text-center">${index + 1}</td>
-                      <td class="px-4 py-2">${entry.name || "Player"}</td>
-                      <td class="px-4 py-2 text-center">${entry.score}</td>
-                      <td class="px-4 py-2 capitalize">${
-                        entry.difficulty || "N/A"
-                      }</td>
-                      <td class="px-4 py-2 capitalize">${
-                        entry.category || "N/A"
-                      }</td>`;
+                    <td class="px-4 py-2 text-center">${index + 1}</td>
+                    <td class="px-4 py-2">${displayName}${
+          entry.user_id ? "" : " (Guest)"
+        }</td>
+                    <td class="px-4 py-2 text-center">${entry.score}</td>
+                    <td class="px-4 py-2 capitalize">${
+                      entry.difficulty || "N/A"
+                    }</td>
+                    <td class="px-4 py-2 capitalize">${
+                      entry.category || "N/A"
+                    }</td>`;
         fragment.appendChild(row);
       });
     }
     leaderboardBody.appendChild(fragment);
+  }
+
+  async function loadAndDisplayStatistics() {
+    let statsData = {
+      totalGamesPlayed: 0,
+      totalWins: 0,
+      categoriesWon: new Set(),
+      hardModeWins: 0,
+    };
+    if (currentUser && _supabase) {
+      try {
+        const { data, error } = await _supabase
+          .from("game_stats")
+          .select(
+            "total_games_played, total_wins, hard_mode_wins, categories_won"
+          )
+          .eq("user_id", currentUser.id)
+          .single();
+
+        if (error && error.code !== "PGRST116") throw error;
+
+        if (data) {
+          statsData = {
+            totalGamesPlayed: data.total_games_played || 0,
+            totalWins: data.total_wins || 0,
+            hardModeWins: data.hard_mode_wins || 0,
+            categoriesWon: new Set(data.categories_won || []),
+          };
+        }
+      } catch (error) {
+        console.error("Error loading Supabase statistics:", error);
+        showToast("Could not load your statistics from server.");
+        statsData = {
+          totalGamesPlayed: 0,
+          totalWins: 0,
+          categoriesWon: new Set(),
+          hardModeWins: 0,
+        };
+      }
+    } else {
+      const localStats = JSON.parse(
+        localStorage.getItem("wordlePlayerStats") || "{}"
+      );
+      statsData = {
+        totalGamesPlayed: localStats.totalGamesPlayed || 0,
+        totalWins: localStats.totalWins || 0,
+        hardModeWins: localStats.hardModeWins || 0,
+        categoriesWon: new Set(localStats.categoriesWon || []),
+      };
+    }
+    updateStatisticsDisplayGlobal(statsData);
   }
 
   function updateStatisticsDisplayGlobal(stats) {
@@ -1023,62 +1402,101 @@
       playerStats.categoriesWon = new Set(playerStats.categoriesWon || []);
     }
 
-    const gamesPlayedEl = document.getElementById("games-played");
-    if (gamesPlayedEl) gamesPlayedEl.textContent = playerStats.totalGamesPlayed;
-
-    const totalWinsEl = document.getElementById("total-wins");
-    if (totalWinsEl) totalWinsEl.textContent = playerStats.totalWins;
+    document.getElementById("games-played").textContent =
+      playerStats.totalGamesPlayed;
+    document.getElementById("total-wins").textContent = playerStats.totalWins;
+    document.getElementById("hard-mode-wins").textContent =
+      playerStats.hardModeWins;
 
     const categoriesWonEl = document.getElementById("categories-won");
     if (categoriesWonEl) {
-      const categoriesWonText =
-        Array.from(playerStats.categoriesWon)
-          .map((c) => c.charAt(0).toUpperCase() + c.slice(1))
-          .join(", ") || "None";
-      categoriesWonEl.textContent = categoriesWonText;
-      categoriesWonEl.title =
-        categoriesWonText.length > 25 ? categoriesWonText : "";
+      const categoriesArray = Array.from(playerStats.categoriesWon);
+      const categoriesText =
+        categoriesArray.length > 0
+          ? categoriesArray
+              .map((c) => c.charAt(0).toUpperCase() + c.slice(1))
+              .join(", ")
+          : "None";
+      categoriesWonEl.textContent = categoriesText;
+      categoriesWonEl.title = categoriesArray.length > 5 ? categoriesText : "";
     }
-
-    const hardModeWinsEl = document.getElementById("hard-mode-wins");
-    if (hardModeWinsEl) hardModeWinsEl.textContent = playerStats.hardModeWins;
   }
 
-  function updateAchievementsDisplayGlobal(unlockedAchievements) {
+  async function loadAndDisplayAchievements() {
+    let achievementsData = {};
+    if (currentUser && _supabase) {
+      try {
+        const { data, error } = await _supabase
+          .from("achievements")
+          .select("achievement_id")
+          .eq("user_id", currentUser.id);
+
+        if (error) throw error;
+
+        if (data) {
+          data.forEach((ach) => {
+            achievementsData[ach.achievement_id] = true;
+          });
+        }
+      } catch (error) {
+        console.error("Error loading Supabase achievements:", error);
+        showToast("Could not load your achievements from server.");
+        achievementsData = {};
+      }
+    } else {
+      achievementsData = JSON.parse(
+        localStorage.getItem("wordleAchievements") || "{}"
+      );
+    }
+    updateAchievementsDisplayGlobal(achievementsData);
+  }
+
+  function updateAchievementsDisplayGlobal(unlockedAchievements = {}) {
     const achievementsList = document.getElementById("achievements-list");
     if (!achievementsList) return;
     achievementsList.innerHTML = "";
     const fragment = document.createDocumentFragment();
 
-    Object.values(ACHIEVEMENTS).forEach((achievement) => {
+    const allPossibleAchievements = Object.values(ACHIEVEMENTS);
+
+    if (allPossibleAchievements.length === 0) {
+      achievementsList.innerHTML =
+        '<p class="text-text-muted col-span-full text-center">No achievements defined.</p>';
+      return;
+    }
+
+    allPossibleAchievements.forEach((achievement) => {
       const isUnlocked = unlockedAchievements[achievement.id] === true;
       const achievementDiv = document.createElement("div");
 
-      achievementDiv.className = `w-full sm:w-64 bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 flex flex-col items-center justify-center text-center transition-opacity duration-300 ${
-        isUnlocked ? "opacity-100" : "opacity-50"
+      achievementDiv.className = `bg-input-bg rounded-lg shadow-md p-4 flex flex-col items-center text-center transition-opacity duration-300 ${
+        isUnlocked
+          ? "opacity-100 border-2 border-yellow-400"
+          : "opacity-60 border border-border-color"
       }`;
+      achievementDiv.setAttribute("role", "listitem");
 
       achievementDiv.innerHTML = `
-                 <div class="text-4xl sm:text-5xl mb-2 ${
-                   isUnlocked ? "text-yellow-400" : "text-gray-500"
-                 }">
-                     ${isUnlocked ? achievement.icon : "🔒"}
-                 </div>
-                 <h3 class="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">${
-                   achievement.name
-                 }</h3>
-                 <p class="text-gray-400 text-xs sm:text-sm">${
-                   achievement.description
-                 }</p>`;
+              <div class="text-4xl mb-2 ${
+                isUnlocked
+                  ? "text-yellow-400 filter grayscale-0"
+                  : "text-gray-500 filter grayscale"
+              }">
+                  ${achievement.icon} ${
+        !isUnlocked
+          ? '<span class="sr-only">(Locked)</span>'
+          : '<span class="sr-only">(Unlocked)</span>'
+      }
+              </div>
+              <h3 class="text-lg font-semibold mb-1 text-text-primary">${
+                achievement.name
+              }</h3>
+              <p class="text-sm text-text-muted">${achievement.description}</p>
+          `;
       fragment.appendChild(achievementDiv);
     });
 
-    if (fragment.childElementCount === 0) {
-      achievementsList.innerHTML =
-        '<p class="text-text-muted col-span-full text-center">No achievements defined yet.</p>';
-    } else {
-      achievementsList.appendChild(fragment);
-    }
+    achievementsList.appendChild(fragment);
   }
 
   document.getElementById("start-game-btn").addEventListener("click", () => {
@@ -1087,37 +1505,31 @@
       currentGameInstance = null;
     }
 
-    const playerName =
-      document.getElementById("player-name").value.trim() || "Player";
+    const nameInput = document.getElementById("player-name");
+    let playerName = nameInput.value.trim();
     const difficulty = document.getElementById("difficulty").value;
     const category = document.getElementById("category").value;
+
+    if (currentUser && userProfile?.username) {
+      playerName = userProfile.username;
+    } else if (!playerName) {
+      playerName = "Guest";
+    }
 
     document.getElementById("menu-container").classList.add("hidden");
     document.getElementById("game-container").classList.remove("hidden");
 
-    currentGameInstance = new WordleGame(playerName, difficulty, category);
+    currentGameInstance = new WordleGame(
+      playerName,
+      difficulty,
+      category,
+      currentUser?.id
+    );
   });
 
   document.addEventListener("DOMContentLoaded", () => {
-    showMenuFromSections();
-
-    const initialLeaderboard = JSON.parse(
-      localStorage.getItem("wordleLeaderboard") || "[]"
-    );
-    updateLeaderboardDisplayGlobal(initialLeaderboard);
-
-    const initialStats = JSON.parse(
-      localStorage.getItem("wordlePlayerStats") || "{}"
-    );
-    initialStats.categoriesWon = new Set(initialStats.categoriesWon || []);
-    updateStatisticsDisplayGlobal(initialStats);
-
-    const initialAchievements = JSON.parse(
-      localStorage.getItem("wordleAchievements") || "{}"
-    );
-    updateAchievementsDisplayGlobal(initialAchievements);
-
-    const playerNameInput = document.getElementById("player-name");
-    if (playerNameInput) playerNameInput.focus();
+    initializeSupabase().then(() => {
+      showMenuFromSections();
+    });
   });
 })();
