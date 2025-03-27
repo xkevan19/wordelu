@@ -84,7 +84,7 @@
       const { data, error, status } = await _supabase
         .from("profiles")
         .select("username")
-        .eq("uuid", userId)
+        .eq("id", userId)
         .single();
 
       if (error && status !== 406) { 
