@@ -826,20 +826,65 @@
       const scoreIncrement = this.gameWon ? this.score : 0;
       const categoriesToSave = Array.from(this.playerStats.categoriesWon);
 
-      const { error } = await _supabase.rpc("update_game_stats", {
-        p_user_id: this.userId,
-        p_games_increment: gamesIncrement,
-        p_wins_increment: winsIncrement,
-        p_hard_wins_increment: hardWinsIncrement,
-        p_score_increment: scoreIncrement,
-        p_categories: categoriesToSave,
-      });
+      console.log("--- Calling update_game_stats RPC ---");
+      console.log(
+        "User ID (p_user_id):",
+        this.userId,
+        "- Type:",
+        typeof this.userId
+      );
+      console.log(
+        "Games Inc (p_games_increment):",
+        gamesIncrement,
+        "- Type:",
+        typeof gamesIncrement
+      );
+      console.log(
+        "Wins Inc (p_wins_increment):",
+        winsIncrement,
+        "- Type:",
+        typeof winsIncrement
+      );
+      console.log(
+        "Hard Wins Inc (p_hard_wins_increment):",
+        hardWinsIncrement,
+        "- Type:",
+        typeof hardWinsIncrement
+      );
+      console.log(
+        "Score Inc (p_score_increment):",
+        scoreIncrement,
+        "- Type:",
+        typeof scoreIncrement
+      );
+      console.log(
+        "Categories (p_categories):",
+        categoriesToSave,
+        "- Type:",
+        typeof categoriesToSave,
+        "- JSON:",
+        JSON.stringify(categoriesToSave)
+      );
 
-      if (error) {
-        console.error("Error updating Supabase stats via RPC:", error);
-        throw error;
-      } else {
-        console.log("Supabase stats updated successfully via RPC.");
+      try {
+        const { error } = await _supabase.rpc("update_game_stats", {
+          p_user_id: this.userId,
+          p_games_increment: gamesIncrement,
+          p_wins_increment: winsIncrement,
+          p_hard_wins_increment: hardWinsIncrement,
+          p_score_increment: scoreIncrement,
+          p_categories: categoriesToSave,
+        });
+
+        if (error) {
+          console.error("Detailed RPC Error Object:", error);
+          throw error;
+        } else {
+          console.log("Supabase stats updated successfully via RPC.");
+        }
+      } catch (rpcError) {
+        console.error("Caught exception during RPC call:", rpcError);
+        throw rpcError;
       }
     }
 
