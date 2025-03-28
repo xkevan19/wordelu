@@ -487,7 +487,11 @@ function setupAuthStateListener() {
   if (!_supabase) return;
 
   _supabase.auth.onAuthStateChange(async (event, session) => {
-    const isAuthPage = window.location.pathname.includes("auth.html");
+    const currentPage = window.location.pathname.split("/").pop();
+    const isAuthPage = currentPage === "auth.html";
+    const isAccountPage = currentPage === "account.html";
+    const isIndexPage = currentPage === "index.html" || currentPage === "";
+
     const isRecovery = window.location.hash.includes("type=recovery");
 
     console.log(
@@ -495,8 +499,8 @@ function setupAuthStateListener() {
       event,
       "Session:",
       !!session,
-      "On Auth Page:",
-      isAuthPage,
+      "Current Page:",
+      currentPage,
       "Recovery Hash:",
       isRecovery
     );
@@ -536,29 +540,31 @@ function setupAuthStateListener() {
         console.log("Redirecting logged-in user FROM auth.html TO index.html.");
         window.location.href = "index.html";
       } else {
-        console.log(
-          "User logged in and on a non-auth page. No redirect needed."
-        );
+        console.log("User logged in on a non-auth page. No redirect needed.");
       }
     } else {
       console.log("User is logged out or session is null.");
-      if (!isAuthPage) {
-        console.log("Redirecting logged-out user TO auth.html.");
-        // Check if we are on account.html, if so, allow staying there briefly for messages? Or always redirect? Let's always redirect for simplicity now.
-        if (!window.location.pathname.includes("account.html")) {
-          // Avoid immediate redirect loop if logout button on account page was just clicked
-          window.location.href = "auth.html";
-        } else {
-          // If on account.html and logged out, likely just clicked logout, let the browser handle going to auth.html via the button's redirect logic.
-          console.log("Logged out on account page, likely via button click.");
-        }
-      } else {
+      if (isAccountPage) {
+        console.log(
+          "Redirecting logged-out user FROM account.html TO auth.html."
+        );
+        window.location.href = "auth.html";
+      } else if (isAuthPage) {
         console.log(
           "User logged out and on auth page. Ensuring forms are visible."
         );
         if (authContainer) authContainer.style.display = "block";
         if (resetUpdateSection) resetUpdateSection.style.display = "none";
         showLoginForm();
+      } else if (isIndexPage) {
+        console.log(
+          "User logged out and on index page (Guest). Allowing access."
+        );
+      } else {
+        console.log(
+          `Logged out and on unknown page (${currentPage}). Redirecting to auth.html.`
+        );
+        window.location.href = "auth.html";
       }
     }
   });
