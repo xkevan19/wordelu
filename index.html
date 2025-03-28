@@ -18,515 +18,525 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { 'dark-background': '#121213', 'card-bg': '#1A1A1B', 'input-bg': '#27272A', 'border-color': '#3A3A3C', 'key-bg': '#333333', 'key-hover': '#444444', 'primary': '#6366F1', 'primary-hover': '#4F46E5', 'secondary': '#4B5563', 'secondary-hover': '#374151', 'correct': '#538D4E', 'present': '#B59F3B', 'absent': '#3A3A3C', 'text-primary': '#FFFFFF', 'text-secondary': '#D1D5DB', 'text-muted': '#9CA3AF', 'error': '#EF4444', 'success': '#10B981', 'overlay-gradient-start': '#6366F1', 'overlay-gradient-end': '#8B5CF6', },
-                    fontFamily: { 'galindo': ['Galindo', 'cursive'], 'sans': ['Inter', 'sans-serif'] },
-                    spacing: { 'grid-gap': '0.5rem', 'key-gap': '0.3rem', 'key-width': '2.8rem', 'enter-width': '4.5rem', 'key-height': '3.5rem', 'cell-size': '3.5rem', },
-                    boxShadow: { 'input-focus': '0 0 0 2px #6366F1', 'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', 'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', },
-                    borderRadius: { 'xl': '0.75rem', },
-                    zIndex: { '40': '40', '50': '50', '55': '55', '60': '60', '100': '100', '110': '110' },
-                    padding: { '16': '4rem', '20': '5rem', '24': '6rem' }
+                    colors: {
+                        'dark-background': '#121213',
+                        'card-bg': '#1A1A1B',
+                        'input-bg': '#27272A',
+                        'border-color': '#3A3A3C',
+                        'key-bg': '#333333',
+                        'key-hover': '#444444',
+                        'primary': '#6366F1',
+                        'primary-hover': '#4F46E5',
+                        'secondary': '#4B5563',
+                        'secondary-hover': '#374151',
+                        'correct': '#538D4E',
+                        'present': '#B59F3B',
+                        'absent': '#3A3A3C',
+                        'text-primary': '#FFFFFF',
+                        'text-secondary': '#D1D5DB',
+                        'text-muted': '#9CA3AF',
+                        'error': '#EF4444',
+                        'success': '#10B981',
+                        'sidebar-bg': '#1E1E1F',
+                        'sidebar-item-hover': '#313133',
+                        'achievement-bg': '#C2920E',
+                        'rank-bg': 'linear-gradient(145deg, #4D46F0 0%, #6366F1 100%)',
+                    },
+                    fontFamily: {
+                        'galindo': ['Galindo', 'cursive'],
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    spacing: {
+                        'grid-gap': '0.5rem',
+                        'key-gap': '0.3rem',
+                        'key-width': '2.8rem',
+                        'enter-width': '4.5rem',
+                        'key-height': '3.5rem',
+                        'cell-size': '3.8rem',
+                        'sidebar-width': '280px',
+                    },
+                    boxShadow: {
+                        'input-focus': '0 0 0 2px #6366F1',
+                        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
+                        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    },
+                    borderRadius: {
+                        'xl': '0.75rem',
+                        '2xl': '1rem',
+                        'lg': '0.5rem',
+                    },
+                    zIndex: { '40': '40', '50': '50', '60': '60', '100': '100' },
+                    padding: { '16': '4rem', '20': '5rem', '24': '6rem' },
+                    transitionProperty: {
+                        'transform-margin': 'transform, margin-left',
+                    },
                 }
             }
         }
     </script>
     <link rel="stylesheet" href="styles/game.css">
-    <style>
-        #game-sidebar {
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(-100%);
-            z-index: 60;
-        }
-
-        #game-container.sidebar-open #game-sidebar {
-            transform: translateX(0);
-        }
-
-        #sidebar-overlay {
-            transition: opacity 0.3s ease-in-out;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 55;
-        }
-
-        #game-container.sidebar-open #sidebar-overlay {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        #game-main-content {
-            transition: margin-left 0.3s ease-in-out;
-        }
-
-        .game-modal {
-            z-index: 100;
-        }
-    </style>
 </head>
 
-<body class="bg-dark-background text-text-secondary">
+<body class="bg-dark-background text-text-secondary font-sans">
 
-    <nav class="bg-card-bg p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="index.html" class="text-2xl font-galindo text-primary">Wordle Challenge</a>
-            <div id="user-actions" class="flex items-center space-x-4">
-
-            </div>
-        </div>
-    </nav>
-
-    <div id="menu-container" class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 pt-8 sm:pt-12">
-
-        <div class="w-full max-w-lg text-center mb-6">
-            <h1 class="text-5xl sm:text-6xl font-galindo text-text-primary mb-3 tracking-tight">Wordle Challenge</h1>
-            <p id="welcome-message" class="text-lg text-text-muted font-sans">Test your vocabulary!</p>
-        </div>
-
-        <div id="main-menu-input-card" class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-card w-full max-w-md mb-6">
-            <div class="mb-5">
-                <label for="player-name" class="block text-sm font-medium text-text-secondary mb-2 font-sans">Your
-                    Name</label>
-                <input type="text" id="player-name" placeholder="Enter Your Name"
-                    class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight placeholder-text-muted focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
-            </div>
-
-            <div class="mb-5">
-                <label for="difficulty"
-                    class="block text-sm font-medium text-text-secondary mb-2 font-sans">Difficulty</label>
-                <div class="relative">
-                    <select id="difficulty"
-                        class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
-                        <option value="easy">Easy</option>
-                        <option value="hard">Hard</option>
-                    </select>
-                    <div
-                        class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted select-arrow">
-                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                        </svg>
-                    </div>
+    <div id="menu-container" class="min-h-screen flex flex-col">
+        <nav class="bg-card-bg p-4 shadow-lg">
+            <div class="container mx-auto flex justify-between items-center">
+                <a href="index.html" class="text-2xl font-galindo text-primary">Wordle Challenge</a>
+                <div id="user-actions-menu" class="flex items-center space-x-4">
                 </div>
             </div>
+        </nav>
 
-            <div class="mb-6">
-                <label for="category"
-                    class="block text-sm font-medium text-text-secondary mb-2 font-sans">Category</label>
-                <div class="relative">
-                    <select id="category"
-                        class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
-                        <option value="general">General</option>
-                        <option value="animals">Animals</option>
-                        <option value="fruits">Fruits</option>
-                        <option value="sports">Sports</option>
-                        <option value="colours">Colours</option>
-                        <option value="entertainment">Entertainment</option>
-                        <option value="tech">Tech</option>
-                        <option value="science">Science</option>
-                    </select>
-                    <div
-                        class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted select-arrow">
-                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                        </svg>
-                    </div>
+        <div class="flex-grow flex flex-col items-center justify-center p-4 sm:p-8 pt-8 sm:pt-12">
+            <div class="w-full max-w-lg text-center mb-6">
+                <h1 class="text-5xl sm:text-6xl font-galindo text-text-primary mb-3 tracking-tight">Wordle Challenge
+                </h1>
+                <p id="welcome-message" class="text-lg text-text-muted font-sans">Test your vocabulary!</p>
+            </div>
+
+            <div id="main-menu-input-card" class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-card w-full max-w-md mb-6">
+                <div class="mb-5">
+                    <label for="player-name" class="block text-sm font-medium text-text-secondary mb-2 font-sans">Your
+                        Name</label>
+                    <input type="text" id="player-name" placeholder="Enter Your Name"
+                        class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight placeholder-text-muted focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
                 </div>
-            </div>
-        </div>
-
-        <div id="menu-buttons-container" class="w-full max-w-md mb-6 text-center">
-            <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
-                <button id="show-leaderboard-btn"
-                    class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                        <path fill-rule="evenodd"
-                            d="M4 5a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 011-1h6a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 110 2h6a1 1 0 110-2H7z"
-                            clip-rule="evenodd" />
-                    </svg> Leaderboard
-                </button>
-                <button id="show-team-leaderboard-btn"
-                    class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                            clip-rule="evenodd" />
-                        <path fill-rule="evenodd"
-                            d="M10 12c-3.02 0-5.8.81-8 2.32V18h16v-3.68C15.8 12.81 13.02 12 10 12z" clip-rule="evenodd"
-                            opacity="0.4" />
-                    </svg> Team Standings
-                </button>
-                <button id="show-statistics-btn"
-                    class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z"
-                            clip-rule="evenodd" />
-                    </svg> Statistics
-                </button>
-                <button id="show-achievements-btn"
-                    class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-                            clip-rule="evenodd" />
-                    </svg> Achievements
-                </button>
-                <button id="show-instructions-btn"
-                    class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                            clip-rule="evenodd" />
-                    </svg> How to Play
-                </button>
-            </div>
-
-            <button id="start-game-btn"
-                class="bg-primary hover:bg-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-200 ease-in-out font-sans">
-                Start Game
-            </button>
-        </div>
-
-        <div id="sections-display-area" class="w-full max-w-3xl mt-2 mb-6">
-
-            <div id="leaderboard-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
-                <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Leaderboard</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-text-secondary">
-                        <thead class="text-xs text-text-muted uppercase bg-input-bg">
-                            <tr>
-                                <th scope="col" class="px-4 py-3">Rank</th>
-                                <th scope="col" class="px-4 py-3">Name</th>
-                                <th scope="col" class="px-4 py-3 text-center">Score</th>
-                                <th scope="col" class="px-4 py-3 text-center">Team</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-body" class="divide-y divide-border-color">
-                            <tr>
-                                <td colspan="4" class="px-4 py-4 text-center text-text-muted">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="team-leaderboard-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
-                <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Team Standings</h2>
-                <div class="overflow-x-auto max-w-sm mx-auto">
-                    <table class="w-full text-lg text-left text-text-secondary">
-                        <thead class="text-base text-text-muted uppercase bg-input-bg">
-                            <tr>
-                                <th scope="col" class="px-4 py-3">Team</th>
-                                <th scope="col" class="px-4 py-3 text-center">Total Score</th>
-                            </tr>
-                        </thead>
-                        <tbody id="team-leaderboard-body" class="divide-y divide-border-color">
-                            <tr>
-                                <td colspan="2" class="text-center text-text-muted py-4">Loading...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="statistics-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
-                <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Player Statistics</h2>
-                <p id="stats-guest-message" class="text-center text-text-muted py-4 hidden">
-                    <a href="auth.html" class="text-primary hover:underline">Log in</a> to track your statistics.
-                </p>
-                <dl class="space-y-4 text-lg hidden">
-                    <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
-                        <dt class="flex items-center font-medium text-text-secondary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-primary" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                <div class="mb-5">
+                    <label for="difficulty"
+                        class="block text-sm font-medium text-text-secondary mb-2 font-sans">Difficulty</label>
+                    <div class="relative">
+                        <select id="difficulty"
+                            class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
+                            <option value="easy">Easy</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted select-arrow">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                             </svg>
-                            Games Played:
-                        </dt>
-                        <dd id="games-played" class="font-semibold text-text-primary text-xl">0</dd>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
-                        <dt class="flex items-center font-medium text-text-secondary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-green-500"
-                                viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clip-rule="evenodd" />
+                </div>
+                <div class="mb-6">
+                    <label for="category"
+                        class="block text-sm font-medium text-text-secondary mb-2 font-sans">Category</label>
+                    <div class="relative">
+                        <select id="category"
+                            class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
+                            <option value="general">General</option>
+                            <option value="animals">Animals</option>
+                            <option value="fruits">Fruits</option>
+                            <option value="sports">Sports</option>
+                            <option value="colours">Colours</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="tech">Tech</option>
+                            <option value="science">Science</option>
+                        </select>
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted select-arrow">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                             </svg>
-                            Total Wins:
-                        </dt>
-                        <dd id="total-wins" class="font-semibold text-text-primary text-xl">0</dd>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
-                        <dt class="flex items-center font-medium text-text-secondary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-yellow-500" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                            Categories Won:
-                        </dt>
-                        <dd id="categories-won"
-                            class="font-semibold text-text-primary text-base sm:text-xl truncate max-w-[40%] sm:max-w-[50%]">
-                            None</dd>
-                    </div>
-                    <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
-                        <dt class="flex items-center font-medium text-text-secondary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9.879 16.121A3 3 0 1012.014 13L9.879 16.121z" />
-                            </svg>
-                            Hard Mode Wins:
-                        </dt>
-                        <dd id="hard-mode-wins" class="font-semibold text-text-primary text-xl">0</dd>
-                    </div>
-                </dl>
-            </div>
-
-            <div id="achievements-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
-                <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Achievements</h2>
-                <p id="achievements-guest-message" class="text-center text-text-muted py-4 hidden">
-                    <a href="auth.html" class="text-primary hover:underline">Log in</a> to track your achievements.
-                </p>
-                <div id="achievements-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
-                    <p class="text-text-muted col-span-full text-center">Loading achievements...</p>
                 </div>
             </div>
 
-            <div id="instructions-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
-                <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">How to Play & Score</h2>
-                <div class="space-y-6 text-text-secondary">
-                    <div>
-                        <h3 class="text-xl font-semibold mb-2 text-text-primary">1. Getting Started</h3>
-                        <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center"><span class="mr-2">•</span><span><strong
-                                        class="font-medium">Your Name:</strong> Enter a name for the Leaderboard
-                                    (optional for guests, automatic if logged in).</span></div>
-                            <div class="flex items-center"><span class="mr-2">•</span>
-                                <div><strong class="font-medium">Difficulty:</strong>
-                                    <div class="ml-4">
-                                        <div class="flex items-center"><span class="mr-2">◦</span><span>Easy: No time
-                                                limit.</span></div>
-                                        <div class="flex items-center"><span class="mr-2">◦</span><span>Hard: 120
-                                                seconds (2 minutes) to guess!</span></div>
+            <div id="menu-buttons-container" class="w-full max-w-md mb-6 text-center">
+                <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
+                    <button id="show-leaderboard-btn"
+                        class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                            <path fill-rule="evenodd"
+                                d="M4 5a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 011-1h6a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 110 2h6a1 1 0 110-2H7z"
+                                clip-rule="evenodd" />
+                        </svg> Leaderboard </button>
+                    <button id="show-team-leaderboard-btn"
+                        class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                clip-rule="evenodd" />
+                            <path fill-rule="evenodd"
+                                d="M10 12c-3.02 0-5.8.81-8 2.32V18h16v-3.68C15.8 12.81 13.02 12 10 12z"
+                                clip-rule="evenodd" opacity="0.4" />
+                        </svg> Team Standings </button>
+                    <button id="show-statistics-btn"
+                        class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z"
+                                clip-rule="evenodd" />
+                        </svg> Statistics </button>
+                    <button id="show-achievements-btn"
+                        class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                                clip-rule="evenodd" />
+                        </svg> Achievements </button>
+                    <button id="show-instructions-btn"
+                        class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                                clip-rule="evenodd" />
+                        </svg> How to Play </button>
+                </div>
+                <button id="start-game-btn"
+                    class="bg-primary hover:bg-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-200 ease-in-out font-sans">
+                    Start Game
+                </button>
+            </div>
+
+            <div id="sections-display-area" class="w-full max-w-3xl mt-2 mb-6">
+                <div id="leaderboard-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Leaderboard</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-text-secondary">
+                            <thead class="text-xs text-text-muted uppercase bg-input-bg">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Rank</th>
+                                    <th scope="col" class="px-4 py-3">Name</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Score</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Team</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body" class="divide-y divide-border-color">
+                                <tr>
+                                    <td colspan="4" class="px-4 py-4 text-center text-text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="team-leaderboard-section"
+                    class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Team Standings</h2>
+                    <div class="overflow-x-auto max-w-sm mx-auto">
+                        <table class="w-full text-lg text-left text-text-secondary">
+                            <thead class="text-base text-text-muted uppercase bg-input-bg">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Team</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Total Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="team-leaderboard-body" class="divide-y divide-border-color">
+                                <tr>
+                                    <td colspan="2" class="text-center text-text-muted py-4">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="statistics-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Player Statistics</h2>
+                    <p id="stats-guest-message" class="text-center text-text-muted py-4 hidden">
+                        <a href="auth.html" class="text-primary hover:underline">Log in</a> to track your statistics.
+                    </p>
+                    <dl class="space-y-4 text-lg hidden">
+                        <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
+                            <dt class="flex items-center font-medium text-text-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-primary" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                                </svg> Games Played:
+                            </dt>
+                            <dd id="games-played" class="font-semibold text-text-primary text-xl">0</dd>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
+                            <dt class="flex items-center font-medium text-text-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-green-500"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd" />
+                                </svg> Total Wins:
+                            </dt>
+                            <dd id="total-wins" class="font-semibold text-text-primary text-xl">0</dd>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
+                            <dt class="flex items-center font-medium text-text-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-yellow-500" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg> Categories Won:
+                            </dt>
+                            <dd id="categories-won"
+                                class="font-semibold text-text-primary text-base sm:text-xl truncate max-w-[40%] sm:max-w-[50%]">
+                                None</dd>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
+                            <dt class="flex items-center font-medium text-text-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9.879 16.121A3 3 0 1012.014 13L9.879 16.121z" />
+                                </svg> Hard Mode Wins:
+                            </dt>
+                            <dd id="hard-mode-wins" class="font-semibold text-text-primary text-xl">0</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div id="achievements-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Achievements</h2>
+                    <p id="achievements-guest-message" class="text-center text-text-muted py-4 hidden">
+                        <a href="auth.html" class="text-primary hover:underline">Log in</a> to track your achievements.
+                    </p>
+                    <div id="achievements-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <p class="text-text-muted col-span-full text-center">Loading achievements...</p>
+                    </div>
+                </div>
+
+                <div id="instructions-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">How to Play & Score</h2>
+                    <div class="space-y-6 text-text-secondary">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-text-primary">1. Getting Started</h3>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span><span><strong
+                                            class="font-medium">Your Name:</strong> Enter a name (optional for guests,
+                                        automatic if logged in). Used for local guest leaderboard.</span></div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span>
+                                    <div><strong class="font-medium">Difficulty:</strong>
+                                        <div class="ml-4">
+                                            <div class="flex items-center"><span class="mr-2">◦</span><span>Easy: No
+                                                    time limit.</span></div>
+                                            <div class="flex items-center"><span class="mr-2">◦</span><span>Hard: 120
+                                                    seconds (2 minutes) to guess!</span></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="flex items-center"><span class="mr-2">•</span><span><strong
-                                        class="font-medium">Category:</strong> Choose a word theme or keep it
-                                    General.</span></div>
-                            <div class="flex items-center"><span class="mr-2">•</span><span>Click <strong
-                                        class="font-medium text-primary">Start Game</strong>!</span></div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-semibold mb-2 text-text-primary">2. Gameplay</h3>
-                        <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center"><span class="mr-2">•</span><span>You have <strong
-                                        class="font-medium">6 attempts</strong> to guess the secret 5-letter
-                                    word.</span></div>
-                            <div class="flex items-center"><span class="mr-2">•</span><span>Type your guess using your
-                                    keyboard or the on-screen keyboard.</span></div>
-                            <div class="flex items-center"><span class="mr-2">•</span><span>Press <strong
-                                        class="font-medium">Enter</strong> to submit.</span></div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-semibold mb-2 text-text-primary">3. Color Coding</h3>
-                        <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center"><span
-                                    class="inline-block w-5 h-5 bg-correct rounded mr-2 border border-gray-700"></span><span><strong
-                                        class="font-medium text-correct mr-1">Green:</strong> Correct letter, correct
-                                    position.</span></div>
-                            <div class="flex items-center"><span
-                                    class="inline-block w-5 h-5 bg-present rounded mr-2 border border-gray-700"></span><span><strong
-                                        class="font-medium text-present mr-1">Yellow:</strong> Correct letter, wrong
-                                    position.</span></div>
-                            <div class="flex items-center"><span
-                                    class="inline-block w-5 h-5 bg-absent rounded mr-2 border border-gray-900"></span><span><strong
-                                        class="font-medium text-text-muted mr-1">Gray:</strong> Letter not in the
-                                    word.</span></div>
-                            <p class="mt-2">The on-screen keyboard updates with these colors too!</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-semibold mb-2 text-text-primary">4. Winning & Losing</h3>
-                        <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center"><span class="mr-2">•</span><span><strong
-                                        class="font-medium">Win:</strong> Guess the word within 6 tries (and time if on
-                                    Hard).</span></div>
-                            <div class="flex items-center"><span class="mr-2">•</span><span><strong
-                                        class="font-medium">Lose:</strong> Run out of attempts or time (on Hard).</span>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span><span><strong
+                                            class="font-medium">Category:</strong> Choose a word theme or keep it
+                                        General.</span></div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span><span>Click <strong
+                                            class="font-medium text-primary">Start Game</strong>!</span></div>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-semibold mb-2 text-text-primary">5. Points System</h3>
-                        <div class="flex flex-col space-y-2 ml-4">
-                            <div class="flex items-center"><span class="mr-2">•</span>
-                                <div><strong class="font-medium">Points per Guess:</strong></div>
-                            </div>
-                            <div class="ml-4">
-                                <div class="flex items-center"><span class="mr-2">◦</span><span>+2 points per <span
-                                            class="inline-block w-3 h-3 bg-correct rounded mx-1"></span> Green
-                                        letter.</span></div>
-                                <div class="flex items-center"><span class="mr-2">◦</span><span>+1 point per <span
-                                            class="inline-block w-3 h-3 bg-present rounded mx-1"></span> Yellow
-                                        letter.</span></div>
-                                <div class="flex items-center"><span class="mr-2">◦</span><span>0 points for <span
-                                            class="inline-block w-3 h-3 bg-absent rounded mx-1"></span> Gray
-                                        letters.</span></div>
-                            </div>
-                            <div class="flex items-center"><span class="mr-2">•</span>
-                                <div><strong class="font-medium">First Try Bonus:</strong> +20 points total (instead of
-                                    per-letter points) for guessing on the first try.</div>
-                            </div>
-                            <div class="flex items-center"><span class="mr-2">•</span>
-                                <div><strong class="font-medium">Hard Mode Time Bonus (on Win):</strong> +1 point for
-                                    every 4 seconds remaining.</div>
-                            </div>
-                            <div class="flex items-center"><span class="mr-2">•</span>
-                                <div><strong class="font-medium">Cumulative Score (Logged-in Users):</strong> Your score
-                                    from each winning
-                                    game is added to your total score on the Leaderboard.</div>
-                            </div>
-                            <div class="flex items-center"><span class="mr-2">•</span>
-                                <div><strong class="font-medium">Guest Scores:</strong> Displayed per-game and on a
-                                    temporary local leaderboard.</div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-text-primary">2. Gameplay</h3>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span><span>You have <strong
+                                            class="font-medium">6 attempts</strong> to guess the secret 5-letter
+                                        word.</span></div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span><span>Type your guess
+                                        using your keyboard or the on-screen keyboard.</span></div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span><span>Press <strong
+                                            class="font-medium">Enter</strong> to submit.</span></div>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-semibold mb-2 text-text-primary">6. Extra Features</h3>
-                        <div class="flex items-center ml-4"><span class="mr-2">•</span><span>Use the menu buttons to
-                                check the <strong class="font-medium">Leaderboard</strong> (shows logged-in users or
-                                local guests), <strong class="font-medium">Team Standings</strong> (logged-in only),
-                                your <strong class="font-medium">Statistics</strong> (logged-in only), and unlocked
-                                <strong class="font-medium">Achievements</strong> (logged-in only).</span></div>
-                        <div class="flex items-center ml-4"><span class="mr-2">•</span><span><a href="auth.html"
-                                    class="text-primary hover:underline">Log in</a> or <a href="auth.html"
-                                    class="text-primary hover:underline">Sign up</a> to track cumulative stats and
-                                achievements.</span></div>
-                        <div class="flex items-center ml-4"><span class="mr-2">•</span><span>Logged-in users can manage
-                                their <a href="account.html" class="text-primary hover:underline">Account</a>
-                                details.</span></div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-text-primary">3. Color Coding</h3>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <div class="flex items-center"><span
+                                        class="inline-block w-5 h-5 bg-correct rounded mr-2 border border-gray-700"></span><span><strong
+                                            class="font-medium text-correct mr-1">Green:</strong> Correct letter,
+                                        correct position.</span></div>
+                                <div class="flex items-center"><span
+                                        class="inline-block w-5 h-5 bg-present rounded mr-2 border border-gray-700"></span><span><strong
+                                            class="font-medium text-present mr-1">Yellow:</strong> Correct letter, wrong
+                                        position.</span></div>
+                                <div class="flex items-center"><span
+                                        class="inline-block w-5 h-5 bg-absent rounded mr-2 border border-gray-900"></span><span><strong
+                                            class="font-medium text-text-muted mr-1">Gray:</strong> Letter not in the
+                                        word.</span></div>
+                                <p class="mt-2">The on-screen keyboard updates with these colors too!</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-text-primary">4. Winning & Losing</h3>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span><span><strong
+                                            class="font-medium">Win:</strong> Guess the word within 6 tries (and time if
+                                        on Hard).</span></div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span><span><strong
+                                            class="font-medium">Lose:</strong> Run out of attempts or time (on
+                                        Hard).</span></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-text-primary">5. Points System</h3>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span>
+                                    <div><strong class="font-medium">Points per Guess:</strong></div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="flex items-center"><span class="mr-2">◦</span><span>+2 points per <span
+                                                class="inline-block w-3 h-3 bg-correct rounded mx-1"></span> Green
+                                            letter.</span></div>
+                                    <div class="flex items-center"><span class="mr-2">◦</span><span>+1 point per <span
+                                                class="inline-block w-3 h-3 bg-present rounded mx-1"></span> Yellow
+                                            letter.</span></div>
+                                    <div class="flex items-center"><span class="mr-2">◦</span><span>0 points for <span
+                                                class="inline-block w-3 h-3 bg-absent rounded mx-1"></span> Gray
+                                            letters.</span></div>
+                                </div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span>
+                                    <div><strong class="font-medium">First Try Bonus:</strong> +20 points total (instead
+                                        of per-letter points) for guessing on the first try.</div>
+                                </div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span>
+                                    <div><strong class="font-medium">Hard Mode Time Bonus (on Win):</strong> +1 point
+                                        for every 4 seconds remaining.</div>
+                                </div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span>
+                                    <div><strong class="font-medium">Cumulative Score (Logged-in Users):</strong> Your
+                                        score from each winning game is added to your total score on the Leaderboard.
+                                    </div>
+                                </div>
+                                <div class="flex items-start"><span class="mr-2 mt-1">•</span>
+                                    <div><strong class="font-medium">Guest Scores:</strong> Displayed per-game and on a
+                                        temporary local guest leaderboard. Not saved permanently.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2 text-text-primary">6. Extra Features</h3>
+                            <div class="flex items-start ml-4"><span class="mr-2 mt-1">•</span><span>Use the main menu
+                                    buttons to check the <strong class="font-medium">Leaderboard</strong> (shows
+                                    logged-in users or local guests), <strong class="font-medium">Team
+                                        Standings</strong> (logged-in only), your <strong
+                                        class="font-medium">Statistics</strong> (logged-in only), and unlocked <strong
+                                        class="font-medium">Achievements</strong> (logged-in only).</span></div>
+                            <div class="flex items-start ml-4"><span class="mr-2 mt-1">•</span><span><a href="auth.html"
+                                        class="text-primary hover:underline">Log in</a> or <a href="auth.html"
+                                        class="text-primary hover:underline">Sign up</a> to track cumulative stats,
+                                    achievements, and compete on leaderboards.</span></div>
+                            <div class="flex items-start ml-4"><span class="mr-2 mt-1">•</span><span>Logged-in users can
+                                    manage their <a href="account.html" class="text-primary hover:underline">Account</a>
+                                    details (username, password, country).</span></div>
+                            <div class="flex items-start ml-4"><span class="mr-2 mt-1">•</span><span>While playing,
+                                    click the <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mx-1"
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg> icon to open the in-game menu for quick access to stats, achievements,
+                                    leaderboard, or quitting.</span></div>
+                        </div>
                     </div>
                 </div>
+
             </div>
 
+            <button id="back-to-menu-from-sections-btn"
+                class="hidden mt-4 flex items-center bg-secondary hover:bg-secondary-hover text-white font-bold py-2 px-5 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                        clip-rule="evenodd" />
+                </svg> Back to Menu
+            </button>
         </div>
-
-        <button id="back-to-menu-from-sections-btn"
-            class="hidden mt-4 flex items-center bg-secondary hover:bg-secondary-hover text-white font-bold py-2 px-5 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd"
-                    d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                    clip-rule="evenodd" />
-            </svg> Back to Menu
-        </button>
-
     </div>
 
 
-    <div id="game-container" class="relative w-full min-h-screen flex hidden">
-        <aside id="game-sidebar"
-            class="absolute top-0 left-0 h-full w-64 bg-card-bg p-6 shadow-lg flex flex-col space-y-4 font-sans">
-            <button id="close-sidebar-btn" class="absolute top-4 right-4 text-text-muted hover:text-text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span class="sr-only">Close Menu</span>
-            </button>
+    <div id="game-container" class="relative min-h-screen w-full flex flex-col hidden overflow-hidden">
 
-            <h3 class="text-lg font-semibold text-text-primary mb-2 pt-6">Game Menu</h3>
-
-            <div id="sidebar-player-info"
-                class="bg-gradient-to-br from-overlay-gradient-start to-overlay-gradient-end text-white p-4 rounded-lg text-center">
-                <p id="sidebar-player-name" class="font-semibold">Player Name</p>
-                <p id="sidebar-player-rank" class="text-sm">Rank: #?</p>
-                <p id="sidebar-player-score" class="text-sm">Total Score: ?</p>
-            </div>
-
-            <button id="sidebar-achievements-btn"
-                class="w-full flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 text-left">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-                        clip-rule="evenodd" />
-                </svg>
-                Achievements
-            </button>
-            <button id="sidebar-stats-btn"
-                class="w-full flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 text-left">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z"
-                        clip-rule="evenodd" />
-                </svg>
-                Statistics
-            </button>
-            <button id="sidebar-leaderboard-btn"
-                class="w-full flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 text-left">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                    <path fill-rule="evenodd"
-                        d="M4 5a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 011-1h6a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 110 2h6a1 1 0 110-2H7z"
-                        clip-rule="evenodd" />
-                </svg>
-                Leaderboard
-            </button>
-            <div class="flex-grow"></div>
-            <button id="sidebar-quit-btn"
-                class="w-full flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 text-left">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1.707-4.293a1 1 0 001.414 1.414L10 11.414l.293.293a1 1 0 101.414-1.414L11.414 10l.293-.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 000 1.414z"
-                        clip-rule="evenodd" />
-                </svg>
-                Quit to Menu
-            </button>
-        </aside>
-
-        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50"></div>
-
-        <main id="game-main-content" class="flex-1 flex flex-col items-center w-full min-h-screen pt-16 pb-4 px-2">
-            <div id="game-info-bar"
-                class="w-full max-w-[600px] px-2 py-2 mb-4 flex justify-between items-center flex-wrap gap-2">
-                <div id="score" class="text-xl sm:text-2xl font-bold" aria-live="polite">Score: 0</div>
-                <div id="difficulty-mode"
-                    class="text-lg sm:text-xl order-last sm:order-none w-full sm:w-auto text-center sm:text-right">
+        <nav class="bg-card-bg p-4 shadow-lg relative z-20">
+            <div class="container mx-auto flex justify-between items-center">
+                <button id="menu-toggle-btn" title="Toggle Menu"
+                    class="text-text-secondary hover:text-text-primary p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <span class="sr-only">Toggle Menu</span>
+                </button>
+                <span class="text-2xl font-bold text-text-primary font-sans tracking-wider">LOGO</span>
+                <div id="user-actions-game" class="flex items-center space-x-4">
                 </div>
-                <div id="timer" class="text-lg sm:text-xl" aria-live="polite"></div>
             </div>
+        </nav>
 
-            <div id="game-board" class="flex flex-col space-y-grid-gap my-auto">
-            </div>
+        <div class="flex-grow flex relative overflow-hidden">
 
-            <div id="keyboard" class="w-full max-w-[600px] px-2 mt-auto mb-2">
-            </div>
-        </main>
+            <aside id="game-sidebar"
+                class="bg-input-bg w-sidebar-width h-full absolute top-0 left-0 p-6 flex flex-col space-y-4 transform -translate-x-full transition-transform duration-300 ease-in-out z-30 overflow-y-auto">
+                <div
+                    class="bg-achievement-bg bg-opacity-20 rounded-lg p-4 border border-achievement-bg border-opacity-40">
+                    <h3 class="text-lg font-semibold mb-3 text-amber-300">Latest Achievements</h3>
+                    <div class="space-y-2">
+                        <button
+                            class="sidebar-button bg-achievement-bg bg-opacity-40 hover:bg-opacity-60 text-amber-100">Achievement
+                            #1</button>
+                        <button
+                            class="sidebar-button bg-achievement-bg bg-opacity-40 hover:bg-opacity-60 text-amber-100">Achievement
+                            #2</button>
+                        <button
+                            class="sidebar-button bg-achievement-bg bg-opacity-40 hover:bg-opacity-60 text-amber-100">Achievement
+                            #3</button>
+                    </div>
+                    <button id="sidebar-achievements-link"
+                        class="mt-3 text-sm text-amber-300 hover:text-amber-100 w-full text-left">View All
+                        Achievements</button>
+                </div>
 
-        <button id="sidebar-toggle-btn" title="Toggle Menu"
-            class="absolute top-4 left-4 flex items-center justify-center bg-secondary hover:bg-secondary-hover text-white font-bold p-2 rounded-full focus:outline-none focus:shadow-outline transition duration-200 z-40">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
-            <span class="sr-only">Toggle Menu</span>
-        </button>
+                <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-lg p-4 text-center text-white">
+                    <div class="text-2xl mb-1">🏆</div>
+                    <p class="text-sm font-semibold" id="sidebar-rank-info">#1 player_name</p>
+                    <p class="text-xs" id="sidebar-score-info">ranked #1</p>
+                    <p class="text-xs" id="sidebar-points-info">with X points</p>
+                    <button id="sidebar-leaderboard-link" class="mt-3 text-sm text-indigo-200 hover:text-white">View
+                        Leaderboard</button>
+                </div>
 
-        <div id="message-box"
-            class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex items-center justify-center hidden z-[110]"
+                <button id="sidebar-stats-link" class="sidebar-button flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Statistics
+                </button>
+
+                <div class="flex-grow"></div>
+
+                <button id="sidebar-change-category" class="sidebar-button">Change Category</button>
+                <button id="sidebar-quit-btn" class="sidebar-button bg-secondary hover:bg-secondary-hover">Quit to
+                    Menu</button>
+
+            </aside>
+
+            <main id="game-content"
+                class="flex-grow flex flex-col items-center justify-between p-4 transition-transform-margin duration-300 ease-in-out">
+
+                <div class="flex-grow flex items-center justify-center w-full max-w-[500px] mx-auto">
+                    <div id="game-board" class="grid grid-rows-6 gap-grid-gap">
+                        <div class="grid grid-cols-5 gap-grid-gap">
+                            <div class="board-cell"></div>
+                            <div class="board-cell"></div>
+                            <div class="board-cell"></div>
+                            <div class="board-cell"></div>
+                            <div class="board-cell"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="keyboard" class="w-full max-w-[600px] p-2 mt-4 bg-card-bg rounded-2xl">
+                </div>
+
+            </main>
+
+        </div>
+
+        <div id="message-box" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50"
             role="dialog" aria-modal="true" aria-labelledby="message-title" aria-describedby="message-text">
-            <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-xl text-center max-w-sm w-full font-sans">
+            <div class="bg-input-bg p-6 sm:p-8 rounded-xl shadow-xl text-center max-w-sm w-full font-sans">
                 <h2 id="message-title" class="text-2xl sm:text-3xl font-bold text-text-primary mb-4"></h2>
                 <p id="message-text" class="text-md sm:text-lg text-text-secondary mb-6"></p>
                 <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
@@ -539,28 +549,6 @@
                         Quit
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <div id="game-stats-modal"
-            class="game-modal fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden p-4"
-            role="dialog" aria-modal="true">
-            <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-card w-full max-w-md relative font-sans">
-                <button
-                    class="modal-close-btn absolute top-3 right-3 text-text-muted hover:text-text-primary text-2xl leading-none">×</button>
-                <h2 class="text-2xl font-bold mb-4 text-center text-text-primary">Statistics</h2>
-                <div id="game-stats-content">Loading...</div>
-            </div>
-        </div>
-        <div id="game-achievements-modal"
-            class="game-modal fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden p-4"
-            role="dialog" aria-modal="true">
-            <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-card w-full max-w-lg relative font-sans">
-                <button
-                    class="modal-close-btn absolute top-3 right-3 text-text-muted hover:text-text-primary text-2xl leading-none">×</button>
-                <h2 class="text-2xl font-bold mb-4 text-center text-text-primary">Achievements</h2>
-                <div id="game-achievements-content"
-                    class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">Loading...</div>
             </div>
         </div>
 

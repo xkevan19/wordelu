@@ -1,10 +1,12 @@
+/* Base body and layout styles */
 body {
     margin: 0;
     overflow-y: auto;
     overflow-x: hidden;
     font-family: 'Inter', sans-serif;
-    background-color: #121213;
-    color: #D1D5DB;
+    background-color: theme('colors.dark-background');
+    color: theme('colors.text-secondary');
+    min-height: 100vh;
 }
 
 #menu-container,
@@ -12,6 +14,7 @@ body {
     min-height: 100vh;
 }
 
+/* Shake animation for invalid row */
 @keyframes shake {
 
     0%,
@@ -39,33 +42,52 @@ body {
     animation: shake 0.5s;
 }
 
-.key.correct {
-    background-color: #538D4E !important;
-    color: white;
-    border-color: #538D4E !important;
+/* Wordle Key/Cell Color States */
+.key.correct,
+.board-cell.correct {
+    background-color: theme('colors.correct') !important;
+    color: white !important;
+    border-color: theme('colors.correct') !important;
+    border-width: 0px;
+    /* Remove border on colored state */
 }
 
-.key.present {
-    background-color: #B59F3B !important;
-    color: white;
-    border-color: #B59F3B !important;
+.key.present,
+.board-cell.present {
+    background-color: theme('colors.present') !important;
+    color: white !important;
+    border-color: theme('colors.present') !important;
+    border-width: 0px;
+    /* Remove border on colored state */
 }
 
-.key.absent {
-    background-color: #3A3A3C !important;
-    color: white;
-    border-color: #3A3A3C !important;
+.key.absent,
+.board-cell.absent {
+    background-color: theme('colors.absent') !important;
+    color: white !important;
+    border-color: theme('colors.absent') !important;
+    border-width: 0px;
+    /* Remove border on colored state */
 }
 
+/* Message Box / Modal (Appears on Win/Lose) */
 #message-box {
     z-index: 50;
+    /* Ensure it's above game elements but below sidebar if needed */
 }
 
+#message-box .bg-input-bg {
+    /* Override if needed, matches sidebar items */
+    background-color: theme('colors.input-bg');
+}
+
+/* Toast Notifications */
 #toast-container {
     position: fixed;
     bottom: 1rem;
     right: 1rem;
     z-index: 100;
+    /* Above everything */
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -73,8 +95,8 @@ body {
 }
 
 .toast {
-    background-color: #1A1A1B;
-    color: #FFFFFF;
+    background-color: theme('colors.card-bg');
+    color: theme('colors.text-primary');
     padding: 0.75rem 1.25rem;
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -83,7 +105,7 @@ body {
     transition: opacity 0.3s ease, transform 0.3s ease;
     font-family: 'Inter', sans-serif;
     font-size: 0.9rem;
-    border: 1px solid #3A3A3C;
+    border: 1px solid theme('colors.border-color');
 }
 
 .toast.show {
@@ -91,56 +113,178 @@ body {
     transform: translateX(0);
 }
 
-.achievement-icon {
-    font-size: 1.8em;
-    margin-right: 0.75em;
-    flex-shrink: 0;
-}
-
-.locked-achievement {
-    opacity: 0.4;
-    filter: grayscale(80%);
-}
-
-.completed-achievement {
-    color: #FBBF24;
-    opacity: 1;
-    filter: none;
-}
-
-.achievement-card-base {
-    background-color: #27272A;
-    border: 1px solid #3A3A3C;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.achievement-card-base:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
+/* General Input/Button Transitions (Used in Main Menu Primarily) */
 input,
 select,
 button {
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 input:focus,
 select:focus {
     outline: none;
-    border-color: #6366F1;
-    box-shadow: 0 0 0 2px #6366F1;
+    border-color: theme('colors.primary');
+    box-shadow: theme('boxShadow.input-focus');
 }
 
 .select-arrow {
-    color: #9CA3AF;
+    /* Used in main menu selects */
+    color: theme('colors.text-muted');
 }
 
+
+/*------------------------------------*/
+/* Styles Specific to New Game UI     */
+/*------------------------------------*/
+
+/* Sidebar and Content Sliding */
+#game-container.sidebar-open #game-sidebar {
+    transform: translateX(0);
+}
+
+#game-container.sidebar-open #game-content {
+    margin-left: theme('spacing.sidebar-width');
+    /* Optional: Dim the main content slightly when sidebar is open */
+    /* filter: brightness(0.7); */
+}
+
+#game-content {
+    margin-left: 0;
+    width: 100%;
+    transition: margin-left theme('transitionDuration.300') ease-in-out, filter theme('transitionDuration.300') ease-in-out;
+}
+
+/* Sidebar Styling */
+#game-sidebar {
+    background-color: theme('colors.input-bg');
+    /* Matches modal background */
+    width: theme('spacing.sidebar-width');
+    box-shadow: 4px 0px 15px rgba(0, 0, 0, 0.2);
+    /* Positioning and transition handled by Tailwind classes in HTML */
+    /* transform: -translate-x-full; transition-transform; duration-300; ease-in-out; z-30; */
+}
+
+/* Sidebar Button Base Style */
+.sidebar-button {
+    display: flex;
+    /* Use flex for icon alignment */
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-radius: theme('borderRadius.lg');
+    background-color: theme('colors.secondary');
+    /* Default darker button */
+    color: theme('colors.text-primary');
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar-button:hover {
+    background-color: theme('colors.sidebar-item-hover');
+}
+
+/* Special Sidebar Button Styles */
+/* Achievement buttons (if needing specific style) */
+#game-sidebar .bg-achievement-bg {
+    background-color: theme('colors.achievement-bg');
+}
+
+/* Quit button (if needing distinct style) */
+#sidebar-quit-btn {
+    /* Example: Make it slightly different */
+    /* background-color: theme('colors.secondary-hover'); */
+}
+
+#sidebar-quit-btn:hover {
+    /* background-color: theme('colors.error'); */
+    /* color: white; */
+}
+
+/* Game Board Styling */
+#game-board {
+    display: grid;
+    /* Use grid directly on the container */
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+    /* 6 rows */
+    gap: theme('spacing.grid-gap');
+    width: 100%;
+    max-width: 350px;
+    /* Adjust max width as needed */
+    margin: auto;
+    /* Center horizontally */
+    padding: 10px 0;
+    /* Add some vertical padding if needed */
+}
+
+#game-board>.grid {
+    /* Style for each row */
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    /* 5 columns */
+    gap: theme('spacing.grid-gap');
+}
+
+.board-cell {
+    width: 100%;
+    /* Rely on grid for sizing */
+    aspect-ratio: 1 / 1;
+    /* Maintain square shape */
+    /* height: theme('spacing.cell-size'); Set by aspect-ratio */
+    border: 2px solid theme('colors.border-color');
+    display: inline-flex;
+    /* Use inline-flex for centering */
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    /* Responsive font size */
+    font-weight: bold;
+    text-transform: uppercase;
+    color: theme('colors.text-primary');
+    border-radius: theme('borderRadius.lg');
+    /* Rounded corners */
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.3s ease;
+    user-select: none;
+}
+
+/* Cell animation on typing */
+.board-cell.scale-110 {
+    transform: scale(1.05);
+    /* Slightly less aggressive scale */
+    border-color: theme('colors.text-muted');
+    /* Highlight typing cell border */
+}
+
+/* Keyboard Styling */
+#keyboard {
+    background-color: theme('colors.card-bg');
+    border-radius: theme('borderRadius.2xl');
+    padding: clamp(0.5rem, 2vw, 1rem);
+    /* Responsive padding */
+    box-shadow: theme('boxShadow.lg');
+    margin-top: auto;
+    /* Push to bottom */
+}
+
+/* Keyboard Row styling */
+#keyboard>div {
+    display: flex;
+    justify-content: center;
+    gap: clamp(0.2rem, 1vw, 0.4rem);
+    /* Responsive gap */
+    margin-bottom: clamp(0.3rem, 1.2vw, 0.6rem);
+}
+
+#keyboard>div:last-child {
+    margin-bottom: 0;
+}
+
+/* Keyboard Key Styling */
 #keyboard .key {
-    background-color: #818384;
+    background-color: theme('colors.key-bg');
     border: none;
-    border-radius: 0.25rem;
-    color: #FFFFFF;
+    border-radius: theme('borderRadius.lg');
+    color: theme('colors.text-primary');
     font-weight: 600;
     display: flex;
     justify-content: center;
@@ -148,8 +292,43 @@ select:focus {
     cursor: pointer;
     text-transform: uppercase;
     padding: 0;
+    height: theme('spacing.key-height');
+    font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+    /* Responsive key text */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    flex: 1 1 0px;
+    /* Allow keys to flex */
+    min-width: 30px;
+    /* Minimum width */
+    max-width: 65px;
+    /* Max width for wider keys */
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+/* Special keys (Enter, Backspace) sizing */
+#keyboard .key.key-enter,
+#keyboard .key.key-backspace {
+    flex-grow: 1.5;
+    /* Make them relatively wider */
+    font-size: clamp(0.8rem, 2.8vw, 1rem);
 }
 
 #keyboard .key:hover {
-    background-color: #6d6e6f;
+    background-color: theme('colors.key-hover');
+}
+
+#keyboard .key:active {
+    transform: scale(0.95);
+    background-color: theme('colors.secondary');
+    /* Slightly different active state */
+}
+
+/* Hide Old UI Elements if they were not removed from HTML */
+#score,
+#game-user-info,
+#timer,
+#difficulty-mode,
+#back-to-menu-btn {
+    display: none !important;
 }
