@@ -824,7 +824,9 @@
       const hardWinsIncrement =
         this.gameWon && this.difficulty === "hard" ? 1 : 0;
       const scoreIncrement = this.gameWon ? this.score : 0;
-      const categoriesToSave = Array.from(this.playerStats.categoriesWon);
+
+      const categoriesArray = Array.from(this.playerStats.categoriesWon || []);
+      const categoriesToSave = categoriesArray;
 
       console.log("--- Calling update_game_stats RPC ---");
       console.log(
@@ -862,6 +864,8 @@
         categoriesToSave,
         "- Type:",
         typeof categoriesToSave,
+        "- Is Array:",
+        Array.isArray(categoriesToSave),
         "- JSON:",
         JSON.stringify(categoriesToSave)
       );
@@ -878,6 +882,10 @@
 
         if (error) {
           console.error("Detailed RPC Error Object:", error);
+          console.error("RPC Error Code:", error.code);
+          console.error("RPC Error Message:", error.message);
+          console.error("RPC Error Details:", error.details);
+          console.error("RPC Error Hint:", error.hint);
           throw error;
         } else {
           console.log("Supabase stats updated successfully via RPC.");
