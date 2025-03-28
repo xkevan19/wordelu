@@ -1334,9 +1334,13 @@
           .select(
             "total_games_played, total_wins, hard_mode_wins, categories_won"
           )
-          .eq("id", currentUser.id)
+          // --- THIS IS THE CORRECTED LINE ---
+          .eq("user_id", currentUser.id)
+          // --- END OF CORRECTION ---
           .maybeSingle();
+
         if (error && status !== 406) throw error;
+
         if (data) {
           const statsData = {
             totalGamesPlayed: data.total_games_played || 0,
@@ -1351,15 +1355,15 @@
             totalWins: 0,
             categoriesWon: new Set(),
             hardModeWins: 0,
-          }); // User exists but no stats row yet
+          });
         }
       } catch (error) {
         console.error("Error loading Supabase statistics:", error);
         showToast("Could not load your statistics from server.");
-        updateStatisticsDisplayGlobal(null); // Show guest message on error
+        updateStatisticsDisplayGlobal(null);
       }
     } else {
-      updateStatisticsDisplayGlobal(null); // Show guest message
+      updateStatisticsDisplayGlobal(null);
     }
   }
 
