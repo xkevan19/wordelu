@@ -1,5 +1,3 @@
-// --- START OF FILE account.js ---
-
 let _supabase;
 const { createClient } = supabase;
 
@@ -25,7 +23,7 @@ function showMessage(element, message, isError = true) {
   element.className = `text-sm text-center ${
     isError ? "text-error" : "text-success"
   }`;
-  element.style.display = "block"; // Ensure it's visible
+  element.style.display = "block";
 }
 
 function setLoading(button, isLoading) {
@@ -102,7 +100,7 @@ async function loadUserProfile(user) {
     const { data, error, status } = await _supabase
       .from("profiles")
       .select("username, team, country")
-      .eq("uuid", user.id)
+      .eq("id", user.id)
       .maybeSingle();
 
     if (error && status !== 406) throw error;
@@ -127,7 +125,10 @@ async function loadUserProfile(user) {
       console.log("No profile found for user, using defaults.");
       profileEmailInput.value = user.email;
       profileUsernameInput.value = "";
-      if (profileTeamSelect) profileTeamSelect.disabled = true;
+      if (profileTeamSelect) {
+        profileTeamSelect.value = "";
+        profileTeamSelect.disabled = true;
+      }
       profileCountryInput.value = "";
       countrySearchInput.value = "";
       showMessage(
@@ -177,7 +178,7 @@ if (profileForm) {
       const { error } = await _supabase
         .from("profiles")
         .update({ username, country: country || null })
-        .eq("uuid", user.id);
+        .eq("id", user.id);
 
       if (error) {
         let errorMessage = error.message;
