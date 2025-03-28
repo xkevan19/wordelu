@@ -38,9 +38,7 @@ const updatePasswordButton = document.getElementById("update-password-button");
 const resetUpdateMessage = document.getElementById("reset-update-message");
 
 function showMessage(element, message, isError = true) {
-  if (!element) {
-    return;
-  }
+  if (!element) return;
   element.textContent = message;
   element.className = `auth-message ${isError ? "error" : "success"}`;
   element.style.display = "block";
@@ -123,9 +121,11 @@ async function initializeSupabase() {
   try {
     const response = await fetch("/.netlify/functions/get-supabase-config");
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({
-        error: "Failed to parse error response from config endpoint.",
-      }));
+      const errorData = await response
+        .json()
+        .catch(() => ({
+          error: "Failed to parse error response from config endpoint.",
+        }));
       throw new Error(
         `Failed to fetch Supabase config: ${response.status} ${
           response.statusText
@@ -133,13 +133,10 @@ async function initializeSupabase() {
       );
     }
     const config = await response.json();
-
     if (!config.url || !config.key) {
       throw new Error("Invalid config received from server.");
     }
-
     _supabase = createClient(config.url, config.key);
-
     if (authContainer) {
       enableAuthForms();
       setupAuthFormListeners();
@@ -490,25 +487,27 @@ function setupAuthStateListener() {
   if (!_supabase) return;
 
   _supabase.auth.onAuthStateChange(async (event, session) => {
-    const isAuthPage = !!authContainer;
+    const isAuthPage = window.location.pathname.includes("auth.html");
     const isRecovery = window.location.hash.includes("type=recovery");
 
     console.log(
-      "Auth State Change Detected:",
+      "Auth State Change:",
       event,
-      "Recovery Hash:",
-      isRecovery,
+      "Session:",
+      !!session,
       "On Auth Page:",
-      isAuthPage
+      isAuthPage,
+      "Recovery Hash:",
+      isRecovery
     );
 
     if (
       event === "PASSWORD_RECOVERY" ||
       (event === "SIGNED_IN" && isRecovery)
     ) {
-      console.log("Password recovery event or signed in with recovery hash.");
+      console.log("Password recovery flow detected.");
       if (isAuthPage && resetUpdateSection) {
-        console.log("Showing reset update section.");
+        console.log("Showing password reset update section.");
         clearMessages();
         resetUpdateSection.style.display = "flex";
         if (authContainer) authContainer.style.display = "none";
@@ -518,62 +517,44 @@ function setupAuthStateListener() {
           "",
           window.location.pathname + window.location.search
         );
+      } else if (!isAuthPage) {
+        console.log(
+          "Password recovery token detected, redirecting to auth page to handle reset."
+        );
+        window.location.href = `auth.html${window.location.hash}`;
       } else {
         console.warn(
-          "Not showing reset section. isAuthPage:",
-          isAuthPage,
-          "resetUpdateSection exists:",
-          !!resetUpdateSection
+          "On auth page but reset update section not found during recovery."
         );
       }
-    } else if (event === "SIGNED_IN") {
-      console.log("Signed in event.");
-      if (window.location.pathname.includes("auth.html") && !isRecovery) {
-        console.log("Redirecting from auth.html to index.html after sign in.");
-        window.location.href = "index.html";
-      }
-      if (isAuthPage && authContainer) authContainer.style.display = "block";
-      if (isAuthPage && resetUpdateSection)
-        resetUpdateSection.style.display = "none";
-    } else if (event === "SIGNED_OUT") {
-      console.log("Signed out event.");
-      if (!window.location.pathname.includes("auth.html")) {
-        console.log("Redirecting to auth.html after sign out.");
-        window.location.href = "auth.html";
-        return;
-      }
+      return;
+    }
+
+    if (session) {
+      console.log("User is logged in.");
       if (isAuthPage) {
-        if (authContainer) authContainer.style.display = "block";
-        if (resetUpdateSection) resetUpdateSection.style.display = "none";
-        showLoginForm();
-      }
-    } else if (event === "INITIAL_SESSION") {
-      console.log("Initial session event.");
-      if (isRecovery && isAuthPage && resetUpdateSection) {
-        console.log(
-          "Initial session with recovery hash, showing reset section."
-        );
-        clearMessages();
-        resetUpdateSection.style.display = "flex";
-        if (authContainer) authContainer.style.display = "none";
-        if (newPasswordInput) newPasswordInput.focus();
-        history.replaceState(
-          null,
-          "",
-          window.location.pathname + window.location.search
-        );
-      } else if (session && window.location.pathname.includes("auth.html")) {
-        console.log(
-          "Initial session exists, redirecting from auth.html to index.html."
-        );
+        console.log("Redirecting logged-in user FROM auth.html TO index.html.");
         window.location.href = "index.html";
-      } else if (!session && !window.location.pathname.includes("auth.html")) {
-        console.log("Initial session missing, redirecting to auth.html.");
-        window.location.href = "auth.html";
-        return;
-      } else if (!session && isAuthPage) {
+      } else {
         console.log(
-          "Initial session missing on auth page, showing login form."
+          "User logged in and on a non-auth page. No redirect needed."
+        );
+      }
+    } else {
+      console.log("User is logged out or session is null.");
+      if (!isAuthPage) {
+        console.log("Redirecting logged-out user TO auth.html.");
+        // Check if we are on account.html, if so, allow staying there briefly for messages? Or always redirect? Let's always redirect for simplicity now.
+        if (!window.location.pathname.includes("account.html")) {
+          // Avoid immediate redirect loop if logout button on account page was just clicked
+          window.location.href = "auth.html";
+        } else {
+          // If on account.html and logged out, likely just clicked logout, let the browser handle going to auth.html via the button's redirect logic.
+          console.log("Logged out on account page, likely via button click.");
+        }
+      } else {
+        console.log(
+          "User logged out and on auth page. Ensuring forms are visible."
         );
         if (authContainer) authContainer.style.display = "block";
         if (resetUpdateSection) resetUpdateSection.style.display = "none";
@@ -588,9 +569,7 @@ function setupCountrySearch(inputId, resultsId, hiddenInputId, wrapperId) {
   const resultsList = document.getElementById(resultsId);
   const hiddenInput = document.getElementById(hiddenInputId);
   const wrapper = document.getElementById(wrapperId);
-
   if (!searchInput || !resultsList || !hiddenInput || !wrapper) return;
-
   if (typeof countries === "undefined") {
     console.error(
       "Countries array not found. Make sure countries.js is loaded before this script."
