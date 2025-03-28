@@ -21,7 +21,7 @@
                     colors: { 'dark-background': '#121213', 'card-bg': '#1A1A1B', 'input-bg': '#27272A', 'border-color': '#3A3A3C', 'key-bg': '#333333', 'key-hover': '#444444', 'primary': '#6366F1', 'primary-hover': '#4F46E5', 'secondary': '#4B5563', 'secondary-hover': '#374151', 'correct': '#538D4E', 'present': '#B59F3B', 'absent': '#3A3A3C', 'text-primary': '#FFFFFF', 'text-secondary': '#D1D5DB', 'text-muted': '#9CA3AF', 'error': '#EF4444', 'success': '#10B981', 'overlay-gradient-start': '#6366F1', 'overlay-gradient-end': '#8B5CF6', },
                     fontFamily: { 'galindo': ['Galindo', 'cursive'], 'sans': ['Inter', 'sans-serif'] },
                     spacing: { 'grid-gap': '0.5rem', 'key-gap': '0.3rem', 'key-width': '2.8rem', 'enter-width': '4.5rem', 'key-height': '3.5rem', 'cell-size': '3.5rem', },
-                    boxShadow: { 'input-focus': '0 0 0 2px #6366F1', 'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', },
+                    boxShadow: { 'input-focus': '0 0 0 2px #6366F1', 'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', 'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', },
                     borderRadius: { 'xl': '0.75rem', },
                     zIndex: { '40': '40', '50': '50', '60': '60', '100': '100' },
                     padding: { '16': '4rem', '20': '5rem', '24': '6rem' }
@@ -34,15 +34,16 @@
 
 <body class="bg-dark-background text-text-secondary">
 
-    <nav id="user-status-header"
-        class="fixed top-0 left-0 right-0 bg-card-bg p-3 shadow-md z-40 flex justify-between items-center">
-        <a href="index.html" class="text-xl font-galindo text-primary">Wordle Challenge</a>
-        <div id="user-actions" class="flex items-center space-x-3">
+    <nav class="bg-card-bg p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-galindo text-primary">Wordle Challenge</a>
+            <div id="user-actions" class="flex items-center space-x-4">
 
+            </div>
         </div>
     </nav>
 
-    <div id="menu-container" class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 pt-20 sm:pt-24">
+    <div id="menu-container" class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 pt-8 sm:pt-12">
 
         <div class="w-full max-w-lg text-center mb-6">
             <h1 class="text-5xl sm:text-6xl font-galindo text-text-primary mb-3 tracking-tight">Wordle Challenge</h1>
@@ -403,6 +404,7 @@
     </div>
 
     <div id="game-container" class="relative w-full min-h-screen flex flex-col items-center hidden pt-16">
+
         <div id="game-ui" class="w-full p-4 mt-4">
             <div class="flex justify-between items-center flex-wrap gap-2">
                 <div class="flex items-center gap-2">
