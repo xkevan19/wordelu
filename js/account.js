@@ -55,9 +55,16 @@ async function initializeSupabase() {
       data: { session },
       error,
     } = await _supabase.auth.getSession();
-    if (error || !session) {
+
+    if (error) {
+      console.error("Error fetching session:", error);
+      window.location.href = "auth.html";
+      return;
+    }
+
+    if (!session) {
       console.log(
-        "No active session found or error fetching session, redirecting to auth."
+        "No active session found on account page, redirecting to auth."
       );
       window.location.href = "auth.html";
       return;
@@ -65,6 +72,13 @@ async function initializeSupabase() {
 
     await loadUserProfile(session.user);
     enableAccountForms();
+
+    _supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        console.log("Signed out detected on account page, redirecting.");
+        window.location.href = "auth.html";
+      }
+    });
   } catch (error) {
     console.error("Supabase Initialization Error:", error);
     showMessage(
@@ -291,18 +305,24 @@ if (passwordForm) {
 
 if (logoutButton) {
   logoutButton.addEventListener("click", async () => {
+    logoutButton.disabled = true;
+    logoutButton.textContent = "Logging out...";
     try {
       if (!_supabase) {
         console.error("Supabase not initialized during logout attempt.");
+
+        logoutButton.disabled = false;
+        logoutButton.textContent = "Logout";
         return;
       }
       const { error } = await _supabase.auth.signOut();
       if (error) throw error;
-      console.log("Logout successful, redirecting.");
-      window.location.href = "auth.html";
+      console.log("Logout successful, auth state change will redirect.");
     } catch (error) {
       console.error("Logout Error:", error);
       showMessage(profileMessage, `Logout failed: ${error.message}`);
+      logoutButton.disabled = false;
+      logoutButton.textContent = "Logout";
     }
   });
 }

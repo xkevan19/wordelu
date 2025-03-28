@@ -18,11 +18,13 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { 'dark-background': '#121213', 'card-bg': '#1A1A1B', 'input-bg': '#27272A', 'border-color': '#3A3A3C', 'key-bg': '#333333', 'key-hover': '#444444', 'primary': '#6366F1', 'primary-hover': '#4F46E5', 'secondary': '#4B5563', 'secondary-hover': '#374151', 'correct': '#538D4E', 'present': '#B59F3B', 'absent': '#3A3A3C', 'text-primary': '#FFFFFF', 'text-secondary': '#D1D5DB', 'text-muted': '#9CA3AF', },
+                    colors: { 'dark-background': '#121213', 'card-bg': '#1A1A1B', 'input-bg': '#27272A', 'border-color': '#3A3A3C', 'key-bg': '#333333', 'key-hover': '#444444', 'primary': '#6366F1', 'primary-hover': '#4F46E5', 'secondary': '#4B5563', 'secondary-hover': '#374151', 'correct': '#538D4E', 'present': '#B59F3B', 'absent': '#3A3A3C', 'text-primary': '#FFFFFF', 'text-secondary': '#D1D5DB', 'text-muted': '#9CA3AF', 'error': '#EF4444', 'success': '#10B981', 'overlay-gradient-start': '#6366F1', 'overlay-gradient-end': '#8B5CF6', },
                     fontFamily: { 'galindo': ['Galindo', 'cursive'], 'sans': ['Inter', 'sans-serif'] },
                     spacing: { 'grid-gap': '0.5rem', 'key-gap': '0.3rem', 'key-width': '2.8rem', 'enter-width': '4.5rem', 'key-height': '3.5rem', 'cell-size': '3.5rem', },
                     boxShadow: { 'input-focus': '0 0 0 2px #6366F1', 'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', },
-                    borderRadius: { 'xl': '0.75rem', }
+                    borderRadius: { 'xl': '0.75rem', },
+                    zIndex: { '40': '40', '50': '50', '60': '60', '100': '100' },
+                    padding: { '16': '4rem', '20': '5rem', '24': '6rem' }
                 }
             }
         }
@@ -32,11 +34,19 @@
 
 <body class="bg-dark-background text-text-secondary">
 
-    <div id="menu-container" class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8">
+    <nav id="user-status-header"
+        class="fixed top-0 left-0 right-0 bg-card-bg p-3 shadow-md z-40 flex justify-between items-center">
+        <a href="index.html" class="text-xl font-galindo text-primary">Wordle Challenge</a>
+        <div id="user-actions" class="flex items-center space-x-3">
 
-        <div class="w-full max-w-lg text-center mb-8">
-            <h1 class="text-6xl sm:text-7xl font-galindo text-text-primary mb-4 tracking-tight">Wordle Challenge</h1>
-            <p class="text-lg text-text-muted font-sans">Test your vocabulary!</p>
+        </div>
+    </nav>
+
+    <div id="menu-container" class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 pt-20 sm:pt-24">
+
+        <div class="w-full max-w-lg text-center mb-6">
+            <h1 class="text-5xl sm:text-6xl font-galindo text-text-primary mb-3 tracking-tight">Wordle Challenge</h1>
+            <p id="welcome-message" class="text-lg text-text-muted font-sans">Test your vocabulary!</p>
         </div>
 
         <div id="main-menu-input-card" class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-card w-full max-w-md mb-6">
@@ -392,12 +402,17 @@
 
     </div>
 
-    <div id="game-container" class="relative w-full h-screen flex flex-col items-center hidden">
-        <div id="game-ui" class="w-full p-4 mt-12">
-            <div class="flex justify-between items-center">
-                <div id="score" class="text-2xl font-bold" aria-live="polite">Score: 0</div>
-                <div id="timer" class="text-xl" aria-live="polite"></div>
-                <div id="difficulty-mode" class="text-xl"></div>
+    <div id="game-container" class="relative w-full min-h-screen flex flex-col items-center hidden pt-16">
+        <div id="game-ui" class="w-full p-4 mt-4">
+            <div class="flex justify-between items-center flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                    <div id="score" class="text-xl sm:text-2xl font-bold" aria-live="polite">Score: 0</div>
+                    <div id="game-user-info" class="text-sm sm:text-base text-text-muted hidden"></div>
+                </div>
+                <div id="timer"
+                    class="text-lg sm:text-xl order-last sm:order-none w-full sm:w-auto text-center sm:text-right"
+                    aria-live="polite"></div>
+                <div id="difficulty-mode" class="text-lg sm:text-xl"></div>
             </div>
         </div>
 
@@ -438,6 +453,7 @@
 
     <div id="toast-container"></div>
 
+    <script src="js/countries.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/game.js"></script>
 

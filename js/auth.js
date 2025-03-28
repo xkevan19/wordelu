@@ -1,5 +1,7 @@
 let _supabase;
 const { createClient } = supabase;
+let currentUser = null;
+let userProfile = null;
 
 const authContainer = document.getElementById("auth-container");
 const loginFormContainer = document.getElementById("login-form-container");
@@ -36,6 +38,7 @@ const newPasswordInput = document.getElementById("new-password-input");
 const confirmPasswordInput = document.getElementById("confirm-password-input");
 const updatePasswordButton = document.getElementById("update-password-button");
 const resetUpdateMessage = document.getElementById("reset-update-message");
+const continueAsGuestLink = document.getElementById("continue-as-guest");
 
 function showMessage(element, message, isError = true) {
   if (!element) return;
@@ -121,11 +124,9 @@ async function initializeSupabase() {
   try {
     const response = await fetch("/.netlify/functions/get-supabase-config");
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({
-          error: "Failed to parse error response from config endpoint.",
-        }));
+      const errorData = await response.json().catch(() => ({
+        error: "Failed to parse error response from config endpoint.",
+      }));
       throw new Error(
         `Failed to fetch Supabase config: ${response.status} ${
           response.statusText
@@ -137,6 +138,19 @@ async function initializeSupabase() {
       throw new Error("Invalid config received from server.");
     }
     _supabase = createClient(config.url, config.key);
+
+    const {
+      data: { session: initialSession },
+      error: initialError,
+    } = await _supabase.auth.getSession();
+    if (initialError) {
+      console.error("Error getting initial session:", initialError);
+    }
+    currentUser = initialSession?.user ?? null;
+    if (currentUser) {
+      await fetchUserProfile(currentUser.id);
+    }
+
     if (authContainer) {
       enableAuthForms();
       setupAuthFormListeners();
@@ -151,6 +165,31 @@ async function initializeSupabase() {
         true
       );
     }
+  }
+}
+
+async function fetchUserProfile(userId) {
+  if (!_supabase || !userId) {
+    userProfile = null;
+    return;
+  }
+  try {
+    const { data, error, status } = await _supabase
+      .from("profiles")
+      .select("username, team")
+      .eq("id", userId)
+      .single();
+
+    if (error && status !== 406) {
+      console.error("Error fetching user profile:", error);
+      userProfile = null;
+    } else {
+      userProfile = data;
+      console.log("User profile fetched in auth.js:", userProfile);
+    }
+  } catch (error) {
+    console.error("Exception fetching user profile in auth.js:", error);
+    userProfile = null;
   }
 }
 
@@ -481,6 +520,20 @@ function setupAuthFormListeners() {
       }
     });
   }
+
+  const guestLink = document.querySelector('a[href="index.html"]');
+  if (guestLink) {
+    guestLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (currentUser) {
+        console.log("User logged in, redirecting to index as user.");
+        window.location.href = "index.html";
+      } else {
+        console.log("Continuing as guest.");
+        window.location.href = "index.html";
+      }
+    });
+  }
 }
 
 function setupAuthStateListener() {
@@ -492,58 +545,70 @@ function setupAuthStateListener() {
     const isAccountPage = currentPage === "account.html";
     const isIndexPage = currentPage === "index.html" || currentPage === "";
 
-    const isRecovery = window.location.hash.includes("type=recovery");
+    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = urlParams.get("type");
+    const isRecovery = type === "recovery";
+
+    const prevUser = currentUser;
+    currentUser = session?.user ?? null;
 
     console.log(
       "Auth State Change:",
       event,
-      "Session:",
+      "| Session:",
       !!session,
-      "Current Page:",
+      "| Page:",
       currentPage,
-      "Recovery Hash:",
-      isRecovery
+      "| Recovery:",
+      isRecovery,
+      "| Type:",
+      type
     );
 
     if (
       event === "PASSWORD_RECOVERY" ||
-      (event === "SIGNED_IN" && isRecovery)
+      (event === "SIGNED_IN" && isRecovery && isAuthPage)
     ) {
       console.log("Password recovery flow detected.");
-      if (isAuthPage && resetUpdateSection) {
+      if (resetUpdateSection) {
         console.log("Showing password reset update section.");
         clearMessages();
         resetUpdateSection.style.display = "flex";
         if (authContainer) authContainer.style.display = "none";
         if (newPasswordInput) newPasswordInput.focus();
+
         history.replaceState(
           null,
           "",
           window.location.pathname + window.location.search
         );
-      } else if (!isAuthPage) {
-        console.log(
-          "Password recovery token detected, redirecting to auth page to handle reset."
-        );
-        window.location.href = `auth.html${window.location.hash}`;
       } else {
         console.warn(
-          "On auth page but reset update section not found during recovery."
+          "Password recovery event on auth page, but resetUpdateSection not found."
         );
       }
-      return;
+
+      if (event === "PASSWORD_RECOVERY") return;
     }
 
     if (session) {
       console.log("User is logged in.");
+      if (!userProfile || (prevUser && session.user.id !== prevUser.id)) {
+        await fetchUserProfile(session.user.id);
+      }
+
       if (isAuthPage) {
         console.log("Redirecting logged-in user FROM auth.html TO index.html.");
         window.location.href = "index.html";
       } else {
-        console.log("User logged in on a non-auth page. No redirect needed.");
+        console.log(
+          `User logged in on ${currentPage}. No redirect needed from auth.js.`
+        );
       }
     } else {
       console.log("User is logged out or session is null.");
+      userProfile = null;
+
       if (isAccountPage) {
         console.log(
           "Redirecting logged-out user FROM account.html TO auth.html."
@@ -558,13 +623,12 @@ function setupAuthStateListener() {
         showLoginForm();
       } else if (isIndexPage) {
         console.log(
-          "User logged out and on index page (Guest). Allowing access."
+          "User logged out on index page (Guest). Allowing access, game.js will handle UI."
         );
       } else {
         console.log(
-          `Logged out and on unknown page (${currentPage}). Redirecting to auth.html.`
+          `Logged out on unknown/protected page (${currentPage}). Redirecting to auth.html.`
         );
-        window.location.href = "auth.html";
       }
     }
   });
