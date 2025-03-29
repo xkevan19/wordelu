@@ -463,6 +463,7 @@
           this.updateDifficultyDisplay();
           this.updateScoreDisplay();
           this.updateTimerDisplay();
+          this.updateCategoryDisplay();
           if (this.timeLeft !== null) {
             this.startTimer();
           }
@@ -477,6 +478,7 @@
           this.setupEventListeners();
           this.updateDifficultyDisplay();
           this.updateGameHeaderUserInfo();
+          this.updateCategoryDisplay();
         });
     }
 
@@ -1137,6 +1139,15 @@
       if (scoreElement) scoreElement.textContent = this.score;
     }
 
+    updateCategoryDisplay() {
+      const categoryDisplayElement =
+        this.rightInfoArea?.querySelector("#category-display");
+      if (categoryDisplayElement) {
+        categoryDisplayElement.textContent =
+          this.category.charAt(0).toUpperCase() + this.category.slice(1);
+      }
+    }
+
     showMessage(title, text, allowHtml = false) {
       const messageBox = document.getElementById("message-box");
       const messageTitle = document.getElementById("message-title");
@@ -1324,7 +1335,13 @@
 
       console.log(`Changing category from ${this.category} to ${newCategory}`);
       this.category = newCategory;
-      showToast(`Category changed to ${newCategory}. New game starting!`, 3500);
+      this.updateCategoryDisplay();
+      showToast(
+        `Category changed to ${
+          this.category.charAt(0).toUpperCase() + this.category.slice(1)
+        }. New game starting!`,
+        3500
+      );
 
       this.resetGameState();
       this.createGameBoard();
@@ -1344,6 +1361,7 @@
       this.updateScoreDisplay();
       this.updateTimerDisplay();
       this.updateDifficultyDisplay();
+      this.updateCategoryDisplay();
       if (this.timeLeft !== null) this.startTimer();
       const messageBox = document.getElementById("message-box");
       if (messageBox) messageBox.classList.add("hidden");
