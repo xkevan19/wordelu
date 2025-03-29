@@ -359,14 +359,16 @@
                 <div class="bg-gradient-gold rounded-2xl p-5 shadow-lg text-white">
                     <h3 class="text-base font-semibold mb-3 text-black opacity-80">Latest Achievements</h3>
                     <ul id="latest-achievements-list-ingame" class="space-y-2 text-sm">
-                        <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Loading...</li>
+                        <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Achievement #1</li>
+                        <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Achievement #2</li>
+                        <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Achievement #3</li>
                     </ul>
                 </div>
                 <div id="player-rank-card-ingame" class="bg-gradient-blue-purple rounded-2xl p-5 shadow-lg text-white">
-                    <p id="rank-player-name-ingame" class="text-sm font-medium mb-1">Loading Rank...</p>
+                    <p id="rank-player-name-ingame" class="text-sm font-medium mb-1">number 1 player_name</p>
                     <p id="rank-position-ingame" class="text-lg font-semibold mb-2 flex items-center"><span
-                            class="text-yellow-400 mr-1.5">🏆</span> Loading...</p>
-                    <p id="rank-points-ingame" class="text-sm font-medium">Loading...</p>
+                            class="text-yellow-400 mr-1.5">🏆</span> ranked #1</p>
+                    <p id="rank-points-ingame" class="text-sm font-medium">with x points</p>
                 </div>
                 <div class="space-y-3">
                     <button id="quit-to-menu-btn-ingame"
@@ -380,8 +382,7 @@
 
             <div id="game-center-area"
                 class="relative flex-grow flex flex-col items-center justify-center order-last lg:order-none min-h-[60vh] lg:min-h-0 w-full">
-                <div id="game-board"
-                    class="flex flex-col space-y-grid-gap my-auto mx-auto">
+                <div id="game-board" class="flex flex-col space-y-grid-gap my-auto mx-auto">
                 </div>
                 <div id="keyboard" class="w-full max-w-[600px] px-2 mt-4 mb-2">
                 </div>
@@ -428,6 +429,20 @@
     </div>
 
     <div id="toast-container" class="fixed bottom-5 right-5 z-[100] space-y-2"></div>
+
+    <div id="category-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-70"
+        role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
+        <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-xl text-center max-w-md w-11/12 font-sans">
+            <h2 id="category-modal-title" class="text-2xl sm:text-3xl font-bold text-text-primary mb-6">Choose New
+                Category</h2>
+            <div id="category-options-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+            </div>
+            <button id="cancel-category-change-btn"
+                class="w-full sm:w-auto bg-secondary hover:bg-secondary-hover text-white font-bold py-2 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                Cancel
+            </button>
+        </div>
+    </div>
 
     <script src="js/game.js"></script>
     <script>
