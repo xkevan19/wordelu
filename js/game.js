@@ -6,7 +6,6 @@
     HARD_MODE_DURATION: 120,
     TOAST_DURATION: 3000,
   };
-
   const WORDS = {
     general: [
       "apple",
@@ -125,7 +124,6 @@
       "power",
     ],
   };
-
   const ACHIEVEMENTS = {
     FIRST_VICTORY: {
       id: "FIRST_VICTORY",
@@ -167,45 +165,35 @@
   let _supabase;
   let currentUser = null;
   let userProfile = null;
+  let currentGameInstance = null;
 
   async function initializeSupabase() {
     try {
       const response = await fetch("/.netlify/functions/get-supabase-config");
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`Failed to fetch Supabase config: ${response.status}`);
-      }
       const config = await response.json();
-      if (!config.url || !config.key) {
+      if (!config.url || !config.key)
         throw new Error("Invalid Supabase config received");
-      }
       _supabase = supabase.createClient(config.url, config.key);
 
       const {
         data: { session },
         error: sessionError,
       } = await _supabase.auth.getSession();
-      if (sessionError) {
+      if (sessionError)
         console.error("Error getting initial session:", sessionError);
-      }
       currentUser = session?.user ?? null;
-      if (currentUser) {
-        await fetchUserProfile(currentUser.id);
-        handleLoggedInState();
-      } else {
-        handleGuestState();
-      }
 
       _supabase.auth.onAuthStateChange(async (_event, session) => {
         const prevUser = currentUser;
         currentUser = session?.user ?? null;
-
         console.log(
           "Auth State Changed:",
           _event,
           " | User:",
           currentUser?.email || "Guest"
         );
-
         if (currentUser && (!prevUser || currentUser.id !== prevUser.id)) {
           await fetchUserProfile(currentUser.id);
           handleLoggedInState();
@@ -213,24 +201,41 @@
           userProfile = null;
           handleGuestState();
         }
-
-        if (!currentGameInstance) {
-          await loadAndDisplayInitialData();
-          showDashboardView();
-        } else {
+        await loadAndDisplayInitialData();
+        if (
+          !currentGameInstance &&
+          !document
+            .getElementById("sections-display-area")
+            ?.querySelector(":not(.hidden)")
+        ) {
+          if (
+            document
+              .getElementById("main-dashboard-content")
+              ?.classList.contains("hidden")
+          ) {
+            showWordleMenuView(); // Default to Wordle menu if not in game or dashboard
+          }
+        } else if (currentGameInstance) {
           updateGameHeaderUserInfo();
         }
         updateSidebarButtonsVisibility();
       });
 
+      if (currentUser) {
+        await fetchUserProfile(currentUser.id);
+        handleLoggedInState();
+      } else {
+        handleGuestState();
+      }
+
       await loadAndDisplayInitialData();
-      showDashboardView();
+      showWordleMenuView(); // Show Wordle menu by default
     } catch (error) {
       console.error("Supabase Initialization Error:", error);
       showToast(`Error initializing: ${error.message}`);
       handleGuestState();
       await loadAndDisplayInitialData();
-      showDashboardView();
+      showWordleMenuView();
     }
   }
 
@@ -284,22 +289,28 @@
   }
 
   function updateSidebarButtonsVisibility() {
-    const teamButton = document.getElementById("show-team-leaderboard-btn");
+    const teamButton = document.getElementById("show-team-leaderboard-btn"); // In Wordle Menu
     if (teamButton) {
-      if (currentUser && userProfile?.team) {
-        teamButton.classList.remove("hidden");
-      } else {
-        teamButton.classList.add("hidden");
-      }
+      teamButton.classList.toggle(
+        "hidden",
+        !(currentUser && userProfile?.team)
+      );
+    }
+    const teamButtonInGame = document.getElementById(
+      "show-team-leaderboard-btn-ingame"
+    ); // Potentially add later
+    if (teamButtonInGame) {
+      teamButtonInGame.classList.toggle(
+        "hidden",
+        !(currentUser && userProfile?.team)
+      );
     }
   }
 
   function handleGuestState() {
     console.log("Handling Guest State UI");
-    const playerNameInput = document.getElementById("player-name");
-    const welcomeMessage = document.getElementById("welcome-message");
-    const teamButton = document.getElementById("show-team-leaderboard-btn");
-
+    const playerNameInput = document.getElementById("player-name"); // In Wordle Menu
+    const welcomeMessage = document.getElementById("welcome-message"); // In Wordle Menu
     if (playerNameInput) {
       playerNameInput.value = localStorage.getItem("wordleGuestName") || "";
       playerNameInput.disabled = false;
@@ -314,19 +325,18 @@
     if (welcomeMessage) {
       welcomeMessage.textContent = "Log in to save progress & compete!";
     }
-    if (teamButton) teamButton.classList.add("hidden");
     updateUserStatusHeader();
     updateStatisticsDisplayGlobal(null);
     updateAchievementsDisplayGlobal(null);
     updateTeamLeaderboardDisplay(null);
+    updateRankingSidebar(null); // Clear rank/achievement in dashboard column too
+    updateLatestAchievementsSidebar(null);
   }
 
   function handleLoggedInState() {
     console.log("Handling Logged In State UI");
-    const playerNameInput = document.getElementById("player-name");
-    const welcomeMessage = document.getElementById("welcome-message");
-    const teamButton = document.getElementById("show-team-leaderboard-btn");
-
+    const playerNameInput = document.getElementById("player-name"); // In Wordle Menu
+    const welcomeMessage = document.getElementById("welcome-message"); // In Wordle Menu
     if (playerNameInput && userProfile?.username) {
       playerNameInput.value = userProfile.username;
       playerNameInput.disabled = true;
@@ -338,13 +348,6 @@
       welcomeMessage.textContent = `Ready for a challenge, ${userProfile.username}?`;
     } else if (welcomeMessage) {
       welcomeMessage.textContent = `Welcome back!`;
-    }
-    if (teamButton) {
-      if (userProfile?.team) {
-        teamButton.classList.remove("hidden");
-      } else {
-        teamButton.classList.add("hidden");
-      }
     }
     updateUserStatusHeader();
   }
@@ -374,11 +377,11 @@
   }
 
   function updateRankingSidebar(rankData) {
-    const card = document.getElementById("player-rank-card");
-    const nameEl = document.getElementById("rank-player-name");
-    const posEl = document.getElementById("rank-position");
-    const pointsEl = document.getElementById("rank-points");
-    if (!card || !nameEl || !posEl || !pointsEl) return;
+    // Targets In-Game/Dashboard column
+    const nameEl = document.getElementById("rank-player-name-ingame");
+    const posEl = document.getElementById("rank-position-ingame");
+    const pointsEl = document.getElementById("rank-points-ingame");
+    if (!nameEl || !posEl || !pointsEl) return;
     if (rankData) {
       nameEl.textContent = rankData.name || "Top Player";
       posEl.innerHTML = `<span class="text-yellow-400 mr-1.5">🏆</span> ranked #${
@@ -393,21 +396,21 @@
   }
 
   function updateLatestAchievementsSidebar(achievements) {
-    const list = document.getElementById("latest-achievements-list");
+    // Targets In-Game/Dashboard column
+    const list = document.getElementById("latest-achievements-list-ingame");
     if (!list) return;
     list.innerHTML = "";
     if (achievements && achievements.length > 0) {
       achievements.slice(0, 3).forEach((ach) => {
         const li = document.createElement("li");
-        li.className =
-          "bg-black bg-opacity-20 rounded-lg p-1.5 px-2.5 truncate";
+        li.className = "bg-black bg-opacity-20 rounded-lg p-2 px-3 truncate";
         li.textContent = typeof ach === "string" ? ach : ach.name;
         li.title = typeof ach === "string" ? ach : ach.name;
         list.appendChild(li);
       });
     } else {
       list.innerHTML =
-        '<li class="bg-black bg-opacity-20 rounded-lg p-1.5 px-2.5 text-gray-300 italic">No achievements yet.</li>';
+        '<li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 text-gray-300 italic">No achievements yet.</li>';
     }
   }
 
@@ -461,31 +464,30 @@
           src: ["sound/correct.wav"],
           volume: 0.5,
           onloaderror: (id, err) =>
-            console.error("Howler load error (correct):", err),
+            console.error("Howler load err(correct):", err),
         }),
         wrong: new Howl({
           src: ["sound/wrong.wav"],
           volume: 0.5,
           onloaderror: (id, err) =>
-            console.error("Howler load error (wrong):", err),
+            console.error("Howler load err(wrong):", err),
         }),
         type: new Howl({
           src: ["sound/type.wav"],
           volume: 0.3,
           onloaderror: (id, err) =>
-            console.error("Howler load error (type):", err),
+            console.error("Howler load err(type):", err),
         }),
         win: new Howl({
           src: ["sound/win.wav"],
           volume: 0.7,
-          onloaderror: (id, err) =>
-            console.error("Howler load error (win):", err),
+          onloaderror: (id, err) => console.error("Howler load err(win):", err),
         }),
         lose: new Howl({
           src: ["sound/lose.wav"],
           volume: 0.7,
           onloaderror: (id, err) =>
-            console.error("Howler load error (lose):", err),
+            console.error("Howler load err(lose):", err),
         }),
       };
       this.playerStats = {
@@ -498,9 +500,8 @@
       this.achievements = {};
       this.boundHandleKeyDown = this.handleKeyDown.bind(this);
       this.boundHandleModalKeyDown = this.handleModalKeyDown.bind(this);
-      this.gameContainer = document.getElementById("game-container-wrapper");
+      this.gameContainer = document.getElementById("game-container"); // Target the correct game container
       this.toastContainer = document.getElementById("toast-container");
-
       this.initGameData()
         .then(() => {
           this.createGameBoard();
@@ -537,7 +538,6 @@
         newQuitBtn.addEventListener("click", () => this.resetGameToMenu());
       }
     }
-
     updateGameHeaderUserInfo() {
       const gameUserInfoEl = document.getElementById("game-user-info");
       if (gameUserInfoEl) {
@@ -555,7 +555,6 @@
         }
       }
     }
-
     async initGameData() {
       if (this.userId && _supabase) {
         try {
@@ -590,7 +589,6 @@
       updateStatisticsDisplayGlobal(this.userId ? this.playerStats : null);
       updateAchievementsDisplayGlobal(this.userId ? this.achievements : null);
     }
-
     selectRandomWord() {
       const categoryWords = WORDS[this.category];
       if (!categoryWords || categoryWords.length === 0) {
@@ -602,11 +600,10 @@
         Math.floor(Math.random() * categoryWords.length)
       ].toUpperCase();
     }
-
     createGameBoard() {
       const gameBoard = this.gameContainer?.querySelector("#game-board");
       if (!gameBoard) {
-        console.error("#game-board not found within #game-container-wrapper");
+        console.error("#game-board not found within #game-container");
         return;
       }
       gameBoard.innerHTML = "";
@@ -625,7 +622,6 @@
       }
       gameBoard.appendChild(fragment);
     }
-
     createKeyboard() {
       const keyboardRows = [
         ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -634,7 +630,7 @@
       ];
       const keyboard = this.gameContainer?.querySelector("#keyboard");
       if (!keyboard) {
-        console.error("#keyboard not found within #game-container-wrapper");
+        console.error("#keyboard not found within #game-container");
         return;
       }
       keyboard.innerHTML = "";
@@ -657,9 +653,8 @@
       });
       keyboard.appendChild(fragment);
     }
-
     setupEventListeners() {
-      const keyboardElement = document.getElementById("keyboard");
+      const keyboardElement = this.gameContainer?.querySelector("#keyboard");
       if (!keyboardElement) return;
       if (keyboardElement.listener) {
         keyboardElement.removeEventListener("click", keyboardElement.listener);
@@ -673,7 +668,6 @@
       document.removeEventListener("keydown", this.boundHandleKeyDown);
       document.addEventListener("keydown", this.boundHandleKeyDown);
     }
-
     handleKeyDown(event) {
       if (
         this.gameOver ||
@@ -685,14 +679,12 @@
       else if (event.key === "Enter") this.handleKeyPress("ENTER");
       else if (event.key === "Backspace") this.handleKeyPress("⌫");
     }
-
     handleKeyPress(key) {
       if (this.gameOver) return;
       if (key === "ENTER") this.submitGuess();
       else if (key === "⌫") this.deleteLetter();
       else if (/^[A-Z]$/.test(key)) this.addLetter(key);
     }
-
     addLetter(letter) {
       if (this.currentCol < this.WORD_LENGTH) {
         const cell = document.getElementById(
@@ -707,7 +699,6 @@
         this.playSound("type");
       }
     }
-
     deleteLetter() {
       if (this.currentCol > 0) {
         this.currentCol--;
@@ -720,7 +711,6 @@
         this.playSound("type");
       }
     }
-
     submitGuess() {
       if (this.currentCol !== this.WORD_LENGTH) {
         this.shakeRow();
@@ -747,7 +737,6 @@
         }
       }
     }
-
     checkGuess(guess) {
       const result = new Array(this.WORD_LENGTH).fill("absent");
       const targetLetters = this.targetWord.split("");
@@ -789,7 +778,6 @@
       this.updateScoreDisplay();
       return result;
     }
-
     updateRowColors(colors, rowIndex) {
       for (let index = 0; index < colors.length; index++) {
         setTimeout(() => {
@@ -808,13 +796,14 @@
         }, index * 200);
       }
     }
-
     updateKeyboardColors(guess, result) {
+      const keyboardDiv = this.gameContainer?.querySelector("#keyboard");
+      if (!keyboardDiv) return;
       for (let i = 0; i < guess.length; i++) {
         const letter = guess[i];
         const status = result[i];
-        const keyButton = document.querySelector(
-          `#keyboard button[data-key="${letter}"]`
+        const keyButton = keyboardDiv.querySelector(
+          `button[data-key="${letter}"]`
         );
         if (keyButton) {
           const isCorrect = keyButton.classList.contains("correct");
@@ -842,7 +831,6 @@
         }
       }
     }
-
     shakeRow() {
       const row = document.getElementById(`row-${this.currentRow}`);
       if (row) {
@@ -850,7 +838,6 @@
         setTimeout(() => row.classList.remove("shake"), 500);
       }
     }
-
     async handleWin() {
       if (this.gameOver) return;
       this.gameOver = true;
@@ -897,7 +884,6 @@
       }
       this.playSound("win");
     }
-
     async handleLose() {
       if (this.gameOver) return;
       this.gameOver = true;
@@ -926,7 +912,6 @@
       }
       this.playSound("lose");
     }
-
     async fetchSupabaseStats() {
       const defaultStats = {
         totalGamesPlayed: 0,
@@ -959,7 +944,6 @@
         throw error;
       }
     }
-
     async updateSupabaseStats() {
       if (!this.userId || !_supabase) return;
       const gamesIncrement = 1;
@@ -969,49 +953,18 @@
       const scoreIncrement = this.gameWon ? this.score : 0;
       const categoriesArray = Array.from(this.playerStats.categoriesWon || []);
       const categoriesToSave = categoriesArray;
-
       console.log("--- Calling update_game_stats RPC ---");
-      console.log(
-        "User ID (p_user_id):",
-        this.userId,
-        "- Type:",
-        typeof this.userId
-      );
-      console.log(
-        "Games Inc (p_games_increment):",
-        gamesIncrement,
-        "- Type:",
-        typeof gamesIncrement
-      );
-      console.log(
-        "Wins Inc (p_wins_increment):",
-        winsIncrement,
-        "- Type:",
-        typeof winsIncrement
-      );
-      console.log(
-        "Hard Wins Inc (p_hard_wins_increment):",
-        hardWinsIncrement,
-        "- Type:",
-        typeof hardWinsIncrement
-      );
-      console.log(
-        "Score Inc (p_score_increment):",
-        scoreIncrement,
-        "- Type:",
-        typeof scoreIncrement
-      );
+      console.log("User ID (p_user_id):", this.userId);
+      console.log("Games Inc (p_games_increment):", gamesIncrement);
+      console.log("Wins Inc (p_wins_increment):", winsIncrement);
+      console.log("Hard Wins Inc (p_hard_wins_increment):", hardWinsIncrement);
+      console.log("Score Inc (p_score_increment):", scoreIncrement);
       console.log(
         "Categories (p_categories):",
         categoriesToSave,
-        "- Type:",
-        typeof categoriesToSave,
-        "- Is Array:",
-        Array.isArray(categoriesToSave),
         "- JSON:",
         JSON.stringify(categoriesToSave)
       );
-
       try {
         const { error } = await _supabase.rpc("update_game_stats", {
           p_user_id: this.userId,
@@ -1023,10 +976,6 @@
         });
         if (error) {
           console.error("Detailed RPC Error Object:", error);
-          console.error("RPC Error Code:", error.code);
-          console.error("RPC Error Message:", error.message);
-          console.error("RPC Error Details:", error.details);
-          console.error("RPC Error Hint:", error.hint);
           throw error;
         } else console.log("Supabase stats updated successfully via RPC.");
       } catch (rpcError) {
@@ -1034,7 +983,6 @@
         throw rpcError;
       }
     }
-
     async fetchSupabaseAchievements() {
       const defaultAchievements = {};
       if (!this.userId || !_supabase) return defaultAchievements;
@@ -1058,7 +1006,6 @@
         return defaultAchievements;
       }
     }
-
     async unlockSupabaseAchievement(achievement) {
       if (!this.userId || !_supabase || !achievement?.id) return;
       const { error } = await _supabase
@@ -1074,7 +1021,6 @@
           `Achievement ${achievement.id} unlocked or already present.`
         );
     }
-
     loadData(key, defaultValue) {
       try {
         const data = localStorage.getItem(key);
@@ -1084,7 +1030,6 @@
       }
       return defaultValue;
     }
-
     saveData(key, data) {
       try {
         localStorage.setItem(key, JSON.stringify(data));
@@ -1092,7 +1037,6 @@
         console.error(`Error saving ${key} to LocalStorage:`, error);
       }
     }
-
     addScoreToLocalGuestLeaderboard() {
       if (this.userId) return;
       const localLeaderboard = this.loadData("wordleLeaderboard", []);
@@ -1108,7 +1052,6 @@
       );
       this.saveData("wordleLeaderboard", trimmedLeaderboard);
     }
-
     checkAchievements() {
       if (!this.userId) return [];
       const self = this;
@@ -1154,7 +1097,6 @@
       );
       return newlyUnlocked;
     }
-
     updateTimerDisplay() {
       const timerEl = document.getElementById("timer");
       if (!timerEl) return;
@@ -1167,7 +1109,6 @@
         timerEl.classList.toggle("text-text-secondary", this.timeLeft > 10);
       } else timerEl.textContent = "";
     }
-
     updateDifficultyDisplay() {
       const difficultyEl = document.getElementById("difficulty-mode");
       if (difficultyEl) {
@@ -1180,12 +1121,10 @@
         }`;
       }
     }
-
     updateScoreDisplay() {
       const scoreEl = document.getElementById("score");
       if (scoreEl) scoreEl.textContent = `Score: ${this.score}`;
     }
-
     showMessage(title, text, allowHtml = false) {
       const messageBox = document.getElementById("message-box");
       const messageTitle = document.getElementById("message-title");
@@ -1200,22 +1139,17 @@
         !quitBtn
       )
         return;
-
       messageTitle.textContent = title;
       if (allowHtml) messageText.innerHTML = text;
       else messageText.textContent = text;
-
       const newGameBtnClone = newGameBtn.cloneNode(true);
       newGameBtn.parentNode.replaceChild(newGameBtnClone, newGameBtn);
       const quitBtnClone = quitBtn.cloneNode(true);
       quitBtn.parentNode.replaceChild(quitBtnClone, quitBtn);
-
       messageBox.classList.remove("hidden");
       newGameBtnClone.focus();
-
       messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
       messageBox.addEventListener("keydown", this.boundHandleModalKeyDown);
-
       const handleNewGame = () => {
         messageBox.classList.add("hidden");
         this.restartGame();
@@ -1224,11 +1158,9 @@
         messageBox.classList.add("hidden");
         this.resetGameToMenu();
       };
-
       newGameBtnClone.addEventListener("click", handleNewGame, { once: true });
       quitBtnClone.addEventListener("click", handleQuit, { once: true });
     }
-
     handleModalKeyDown(event) {
       if (event.key === "Tab") {
         const messageBox = document.getElementById("message-box");
@@ -1250,7 +1182,6 @@
         }
       }
     }
-
     playSound(soundName) {
       const sound = this.sounds[soundName];
       if (sound && sound.state() === "loaded") sound.play();
@@ -1259,7 +1190,6 @@
           sound.play();
         });
     }
-
     restartGame() {
       this.resetGameState();
       this.createGameBoard();
@@ -1271,7 +1201,6 @@
       const messageBox = document.getElementById("message-box");
       if (messageBox) messageBox.classList.add("hidden");
     }
-
     resetGameState() {
       clearInterval(this.timerInterval);
       this.currentRow = 0;
@@ -1286,19 +1215,17 @@
       this.guessedLetters = new Set();
       this.createKeyboard();
     }
-
     resetGameToMenu() {
       this.destroy();
       currentGameInstance = null;
-      showDashboardView();
+      showWordleMenuView();
       loadAndDisplayInitialData();
       updateSidebarButtonsVisibility();
     }
-
     destroy() {
       clearInterval(this.timerInterval);
       document.removeEventListener("keydown", this.boundHandleKeyDown);
-      const keyboardElement = document.getElementById("keyboard");
+      const keyboardElement = this.gameContainer?.querySelector("#keyboard");
       if (keyboardElement && keyboardElement.listener) {
         keyboardElement.removeEventListener("click", keyboardElement.listener);
         delete keyboardElement.listener;
@@ -1307,7 +1234,6 @@
       if (messageBox)
         messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
     }
-
     startTimer() {
       clearInterval(this.timerInterval);
       this.updateTimerDisplay();
@@ -1322,46 +1248,36 @@
     }
   }
 
-  let currentGameInstance = null;
+  // View Switching Functions
+  function showWordleMenuView() {
+    console.log("Showing Wordle Menu View");
+    document.getElementById("menu-container")?.classList.remove("hidden");
+    document.getElementById("main-dashboard-content")?.classList.add("hidden");
+    document.getElementById("game-container")?.classList.add("hidden");
+    document
+      .getElementById("sections-display-area")
+      ?.classList.remove("hidden"); // Sections are part of menu
+    hideAllSections(); // Ensure specific sections are hidden initially
+  }
 
   function showDashboardView() {
     console.log("Showing Dashboard View");
+    document.getElementById("menu-container")?.classList.add("hidden");
     document
       .getElementById("main-dashboard-content")
       ?.classList.remove("hidden");
-    document.getElementById("game-container-wrapper")?.classList.add("hidden");
-    document.getElementById("sections-display-area")?.classList.add("hidden");
-    document
-      .getElementById("back-to-menu-from-sections-btn")
-      ?.classList.add("hidden");
+    document.getElementById("game-container")?.classList.add("hidden");
+    loadAndDisplayInitialData(); // Refresh dashboard column data
   }
 
   function showGameView() {
     console.log("Showing Game View");
+    document.getElementById("menu-container")?.classList.add("hidden");
     document.getElementById("main-dashboard-content")?.classList.add("hidden");
-    document
-      .getElementById("game-container-wrapper")
-      ?.classList.remove("hidden");
-    document.getElementById("sections-display-area")?.classList.add("hidden");
-    document
-      .getElementById("back-to-menu-from-sections-btn")
-      ?.classList.add("hidden");
+    document.getElementById("game-container")?.classList.remove("hidden");
   }
 
-  function showSectionsView() {
-    console.log("Showing Sections View Area");
-    document.getElementById("main-dashboard-content")?.classList.add("hidden");
-    document.getElementById("game-container-wrapper")?.classList.add("hidden");
-    document
-      .getElementById("sections-display-area")
-      ?.classList.remove("hidden");
-    document
-      .getElementById("back-to-menu-from-sections-btn")
-      ?.classList.remove("hidden");
-  }
-
-  function showSection(sectionId) {
-    showSectionsView();
+  function hideAllSections() {
     const sectionsArea = document.getElementById("sections-display-area");
     if (sectionsArea) {
       Array.from(sectionsArea.children).forEach((child) => {
@@ -1369,34 +1285,51 @@
           child.id &&
           (child.id.endsWith("-section") || child.id.endsWith("-btn"))
         ) {
-          if (child.id !== "back-to-menu-from-sections-btn") {
-            child.classList.add("hidden");
-          }
+          child.classList.add("hidden");
         }
       });
-    } else {
-      console.error("#sections-display-area not found!");
-      return;
     }
+  }
+
+  function showSection(sectionId) {
+    // Ensure we are in the menu view context
+    showWordleMenuView();
+
+    // Hide all sections first (within sections-display-area)
+    hideAllSections();
+
+    // Show the target section and the back button
     const sectionToShow = document.getElementById(sectionId);
-    if (sectionToShow) {
-      sectionToShow.classList.remove("hidden");
-      console.log(`Showing specific section: ${sectionId}`);
-    } else {
-      console.error(`Section with ID ${sectionId} not found!`);
-    }
+    const backButton = document.getElementById(
+      "back-to-menu-from-sections-btn"
+    );
+    if (sectionToShow) sectionToShow.classList.remove("hidden");
+    if (backButton) backButton.classList.remove("hidden");
+
+    // Hide the main menu cards/buttons when showing a section
+    document.getElementById("main-menu-input-card")?.classList.add("hidden");
+    document.getElementById("menu-buttons-container")?.classList.add("hidden");
+
     if (sectionId === "leaderboard-section") loadAndDisplayLeaderboard();
     else if (sectionId === "statistics-section") loadAndDisplayStatistics();
     else if (sectionId === "achievements-section") loadAndDisplayAchievements();
     else if (sectionId === "team-leaderboard-section")
       loadAndDisplayTeamLeaderboard();
-    document.getElementById("sidebar")?.classList.add("-translate-x-full");
   }
 
-  function showDashboardViewFromSections() {
-    showDashboardView();
+  function showMenuFromSections() {
+    // Ensure we are in the menu view context
+    showWordleMenuView();
+    // Hide the specific section and back button
+    hideAllSections();
+    // Show the main menu cards/buttons
+    document.getElementById("main-menu-input-card")?.classList.remove("hidden");
+    document
+      .getElementById("menu-buttons-container")
+      ?.classList.remove("hidden");
   }
 
+  // Event Listeners for Wordle Menu Buttons
   document
     .getElementById("show-leaderboard-btn")
     ?.addEventListener("click", () => showSection("leaderboard-section"));
@@ -1413,11 +1346,19 @@
     .getElementById("show-team-leaderboard-btn")
     ?.addEventListener("click", () => showSection("team-leaderboard-section"));
   document
-    .getElementById("back-to-menu-from-sections-btn")
-    ?.addEventListener("click", showDashboardViewFromSections);
-  document
-    .getElementById("quit-to-menu-btn")
+    .getElementById("show-dashboard-btn")
     ?.addEventListener("click", showDashboardView);
+  document
+    .getElementById("back-to-menu-from-sections-btn")
+    ?.addEventListener("click", showMenuFromSections);
+
+  // Event Listeners for Dashboard/In-Game Column Buttons
+  document
+    .getElementById("quit-to-menu-btn-ingame")
+    ?.addEventListener("click", showWordleMenuView);
+  document
+    .getElementById("change-category-btn-ingame")
+    ?.addEventListener("click", showWordleMenuView);
 
   async function loadAndDisplayInitialData() {
     let topPlayerData = null;
@@ -1438,7 +1379,7 @@
           };
         }
       } catch (error) {
-        console.error("Error fetching top player for sidebar:", error);
+        console.error("Error fetching top player:", error);
       }
     }
     updateRankingSidebar(topPlayerData);
@@ -1459,7 +1400,7 @@
           );
         }
       } catch (error) {
-        console.error("Error fetching latest achievements for sidebar:", error);
+        console.error("Error fetching latest achievements:", error);
       }
     }
     updateLatestAchievementsSidebar(latestAchievementsData);
@@ -1472,6 +1413,13 @@
     ]);
     updateSidebarButtonsVisibility();
   }
+
+  // --- Load/Update Functions for Sections (Leaderboard, Stats, Achievements, Teams) ---
+  // Keep the existing loadAndDisplayLeaderboard, updateLeaderboardDisplayGlobal,
+  // loadAndDisplayStatistics, updateStatisticsDisplayGlobal,
+  // loadAndDisplayAchievements, updateAchievementsDisplayGlobal,
+  // loadAndDisplayTeamLeaderboard, updateTeamLeaderboardDisplay functions as they were.
+  // Ensure they target the correct elements within #sections-display-area.
 
   async function loadAndDisplayLeaderboard() {
     const leaderboardBody = document.getElementById("leaderboard-body");
@@ -1519,7 +1467,6 @@
       }
     }
   }
-
   function updateLeaderboardDisplayGlobal(
     leaderboardData = [],
     isLocal = false
@@ -1544,19 +1491,18 @@
         const isGuestEntry = isLocal;
         const row = document.createElement("tr");
         row.className = index % 2 === 0 ? "bg-input-bg/50" : "";
-        row.innerHTML = `
-                  <td class="px-4 py-2 text-center">${index + 1}</td>
-                  <td class="px-4 py-2">${displayName}${
+        row.innerHTML = ` <td class="px-4 py-2 text-center">${
+          index + 1
+        }</td> <td class="px-4 py-2">${displayName}${
           isGuestEntry ? " (Guest)" : ""
-        }</td>
-                  <td class="px-4 py-2 text-center">${score || 0}</td>
-                  <td class="px-4 py-2 capitalize text-center">${team}</td>`;
+        }</td> <td class="px-4 py-2 text-center">${
+          score || 0
+        }</td> <td class="px-4 py-2 capitalize text-center">${team}</td>`;
         fragment.appendChild(row);
       });
     }
     leaderboardBody.appendChild(fragment);
   }
-
   async function loadAndDisplayStatistics() {
     if (currentUser && _supabase) {
       try {
@@ -1593,7 +1539,6 @@
       updateStatisticsDisplayGlobal(null);
     }
   }
-
   function updateStatisticsDisplayGlobal(stats) {
     const dlElement = document.querySelector("#statistics-section dl");
     const guestMessageElement = document.getElementById("stats-guest-message");
@@ -1637,7 +1582,6 @@
       if (dlElement) dlElement.classList.add("hidden");
     }
   }
-
   async function loadAndDisplayAchievements() {
     if (currentUser && _supabase) {
       try {
@@ -1661,7 +1605,6 @@
       updateAchievementsDisplayGlobal(null);
     }
   }
-
   function updateAchievementsDisplayGlobal(unlockedAchievements) {
     const achievementsList = document.getElementById("achievements-list");
     const guestMessageElement = document.getElementById(
@@ -1689,22 +1632,19 @@
             : "opacity-60 border border-border-color"
         }`;
         achievementDiv.setAttribute("role", "listitem");
-        achievementDiv.innerHTML = `
-                  <div class="text-4xl mb-2 ${
-                    isUnlocked
-                      ? "text-yellow-400 filter grayscale-0"
-                      : "text-gray-500 filter grayscale"
-                  }"> ${achievement.icon} ${
+        achievementDiv.innerHTML = ` <div class="text-4xl mb-2 ${
+          isUnlocked
+            ? "text-yellow-400 filter grayscale-0"
+            : "text-gray-500 filter grayscale"
+        }"> ${achievement.icon} ${
           !isUnlocked
             ? '<span class="sr-only">(Locked)</span>'
             : '<span class="sr-only">(Unlocked)</span>'
-        } </div>
-                  <h3 class="text-lg font-semibold mb-1 text-text-primary">${
-                    achievement.name
-                  }</h3>
-                  <p class="text-sm text-text-muted">${
-                    achievement.description
-                  }</p>`;
+        } </div> <h3 class="text-lg font-semibold mb-1 text-text-primary">${
+          achievement.name
+        }</h3> <p class="text-sm text-text-muted">${
+          achievement.description
+        }</p>`;
         fragment.appendChild(achievementDiv);
       });
       achievementsList.appendChild(fragment);
@@ -1717,7 +1657,6 @@
       if (achievementsList) achievementsList.classList.add("hidden");
     }
   }
-
   async function loadAndDisplayTeamLeaderboard() {
     const teamBody = document.getElementById("team-leaderboard-body");
     if (!teamBody || !_supabase) {
@@ -1756,7 +1695,6 @@
       updateTeamLeaderboardDisplay(undefined);
     }
   }
-
   function updateTeamLeaderboardDisplay(teamScores) {
     const teamBody = document.getElementById("team-leaderboard-body");
     if (!teamBody) return;
@@ -1767,9 +1705,7 @@
         blueStyle = "text-blue-400 font-bold";
       else if (teamScores.red > teamScores.blue)
         redStyle = "text-red-400 font-bold";
-      teamBody.innerHTML = `
-              <tr class="border-b border-border-color"> <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td> <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td> </tr>
-              <tr> <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td> <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td> </tr>`;
+      teamBody.innerHTML = ` <tr class="border-b border-border-color"> <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td> <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td> </tr> <tr> <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td> <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td> </tr>`;
     } else if (currentUser && teamScores === undefined) {
       teamBody.innerHTML =
         '<tr><td colspan="2" class="text-center text-error py-4">Error loading team scores.</td></tr>';
@@ -1778,16 +1714,17 @@
         '<tr><td colspan="2" class="text-center text-text-muted py-4"><a href="auth.html" class="text-primary hover:underline">Log in</a> to see team scores</td></tr>';
     }
   }
+  // --- End Load/Update Functions ---
 
   document.getElementById("start-game-btn")?.addEventListener("click", () => {
     if (currentGameInstance) {
       currentGameInstance.destroy();
       currentGameInstance = null;
     }
-    const nameInput = document.getElementById("player-name");
+    const nameInput = document.getElementById("player-name"); // From Wordle Menu
     let playerName = nameInput ? nameInput.value.trim() : null;
-    const difficulty = document.getElementById("difficulty")?.value || "easy";
-    const category = document.getElementById("category")?.value || "general";
+    const difficulty = document.getElementById("difficulty")?.value || "easy"; // From Wordle Menu
+    const category = document.getElementById("category")?.value || "general"; // From Wordle Menu
     let finalPlayerName = "Guest";
     if (currentUser && userProfile?.username) {
       finalPlayerName = userProfile.username;
@@ -1796,6 +1733,7 @@
       localStorage.setItem("wordleGuestName", finalPlayerName);
     } else if (!currentUser) {
       finalPlayerName = "Guest";
+      localStorage.setItem("wordleGuestName", finalPlayerName);
     }
     showGameView();
     currentGameInstance = new WordleGame(
@@ -1805,7 +1743,6 @@
       currentUser?.id,
       userProfile
     );
-    document.getElementById("sidebar")?.classList.add("-translate-x-full");
   });
 
   document.addEventListener("DOMContentLoaded", () => {
