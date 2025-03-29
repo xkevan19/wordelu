@@ -482,7 +482,7 @@
         ?.addEventListener("click", () => this.resetGameToMenu());
       document
         .getElementById("change-category-btn-ingame")
-        ?.addEventListener("click", () => this.resetGameToMenu()); // Changed to reset
+        ?.addEventListener("click", () => this.resetGameToMenu());
     }
     updateGameHeaderUserInfo() {
       const gui = this.rightInfoArea?.querySelector("#game-user-info");
@@ -1527,7 +1527,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     initializeSupabase();
   });
-  window.showWordleMenuView = showWordleMenuView; // Expose globally for inline script
-  window.currentGameInstance = currentGameInstance; // Expose for dropdown quit button
-  window.showSection = showSection; // Expose for dropdown buttons
+  window.showWordleMenuView = showWordleMenuView;
+  window.showSection = showSection;
 })();
