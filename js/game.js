@@ -208,7 +208,7 @@
         } else if (
           !document
             .getElementById("game-container")
-            ?.style.display?.includes("none")
+            .classList.contains("hidden")
         ) {
           showWordleMenuView();
         }
@@ -473,7 +473,7 @@
           this.updateDifficultyDisplay();
           this.updateGameHeaderUserInfo();
         });
-      const qb = document.getElementById("quit-btn");
+      const qb = this.gameContainer.querySelector("#quit-btn");
       if (qb) {
         const nqb = qb.cloneNode(true);
         qb.parentNode.replaceChild(nqb, qb);
@@ -1013,18 +1013,15 @@
       const qbc = qb.cloneNode(true);
       qb.parentNode.replaceChild(qbc, qb);
       mb.classList.remove("hidden");
-      mb.style.display = "flex"; // Ensure message box shows
       ngbc.focus();
       mb.removeEventListener("keydown", this.boundHandleModalKeyDown);
       mb.addEventListener("keydown", this.boundHandleModalKeyDown);
       const hNG = () => {
         mb.classList.add("hidden");
-        mb.style.display = "none";
         this.restartGame();
       };
       const hQ = () => {
         mb.classList.add("hidden");
-        mb.style.display = "none";
         this.resetGameToMenu();
       };
       ngbc.addEventListener("click", hNG, { once: true });
@@ -1049,17 +1046,6 @@
             e.preventDefault();
           }
         }
-      } else if (e.key === "Escape") {
-        const qbc = document.getElementById("quit-btn");
-        if (qbc) qbc.click();
-      } else if (e.key === "Enter") {
-        const ngbc = document.getElementById("new-game-btn");
-        if (
-          document.activeElement !== ngbc &&
-          document.activeElement !== document.getElementById("quit-btn")
-        ) {
-          if (ngbc) ngbc.click();
-        }
       }
     }
     playSound(sN) {
@@ -1079,10 +1065,7 @@
       this.updateDifficultyDisplay();
       if (this.timeLeft !== null) this.startTimer();
       const mb = document.getElementById("message-box");
-      if (mb) {
-        mb.classList.add("hidden");
-        mb.style.display = "none";
-      }
+      if (mb) mb.classList.add("hidden");
       loadAndDisplayInitialData();
     }
     resetGameState() {
@@ -1132,28 +1115,19 @@
   }
 
   function showWordleMenuView() {
-    console.log("--- Running showWordleMenuView ---");
+    console.log("Showing Wordle Menu View");
     const menuContainer = document.getElementById("menu-container");
     const gameContainer = document.getElementById("game-container");
-
     if (menuContainer) {
-      console.log("Menu Container: Removing hidden, setting display block");
       menuContainer.classList.remove("hidden");
-      menuContainer.style.display = "block";
     } else {
-      console.error("Menu container NOT FOUND!");
+      console.error("Menu container not found!");
     }
-
     if (gameContainer) {
-      console.log(
-        "Game Container: Adding hidden, setting display none !important"
-      );
       gameContainer.classList.add("hidden");
-      gameContainer.style.display = "none !important";
     } else {
-      console.error("Game container NOT FOUND!");
+      console.error("Game container not found!");
     }
-
     document
       .getElementById("sections-display-area")
       ?.classList.remove("hidden");
@@ -1168,29 +1142,19 @@
   }
 
   function showGameView() {
-    console.log("--- Running showGameView ---");
+    console.log("Showing Game View");
     const menuContainer = document.getElementById("menu-container");
     const gameContainer = document.getElementById("game-container");
-
     if (menuContainer) {
-      console.log(
-        "Menu Container: Adding hidden, setting display none !important"
-      );
       menuContainer.classList.add("hidden");
-      menuContainer.style.display = "none !important";
     } else {
-      console.error("Menu container NOT FOUND!");
+      console.error("Menu container not found!");
     }
-
     if (gameContainer) {
-      console.log(
-        "Game Container: Removing hidden, removing display style, adding flex classes"
-      );
       gameContainer.classList.remove("hidden");
-      gameContainer.style.display = "";
-      gameContainer.classList.add("flex", "flex-col", "lg:flex-row");
+      gameContainer.classList.add("flex");
     } else {
-      console.error("Game container NOT FOUND!");
+      console.error("Game container not found!");
     }
   }
 
@@ -1207,7 +1171,6 @@
 
   function showSection(sId) {
     showWordleMenuView();
-
     document.getElementById("main-menu-input-card")?.classList.add("hidden");
     document.getElementById("menu-buttons-container")?.classList.add("hidden");
     hideAllSections();
@@ -1217,7 +1180,6 @@
     );
     if (sectionToShow) sectionToShow.classList.remove("hidden");
     if (backButton) backButton.classList.remove("hidden");
-
     if (sId === "leaderboard-section") loadAndDisplayLeaderboard();
     else if (sId === "statistics-section") loadAndDisplayStatistics();
     else if (sId === "achievements-section") loadAndDisplayAchievements();
