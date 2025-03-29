@@ -108,8 +108,13 @@
       "cyber",
       "robot",
       "laser",
-      "coded",
-      "chips",
+      "space",
+      "probe",
+      "light",
+      "virus",
+      "genes",
+      "earth",
+      "power",
     ],
     science: [
       "orbit",
@@ -354,6 +359,10 @@
     const ne = document.getElementById("rank-player-name-ingame");
     const pe = document.getElementById("rank-position-ingame");
     const pte = document.getElementById("rank-points-ingame");
+    const mne = document.getElementById("mobile-rank-player-name-ingame");
+    const mpe = document.getElementById("mobile-rank-position-ingame");
+    const mpte = document.getElementById("mobile-rank-points-ingame");
+
     if (!ne || !pe || !pte) return;
     if (rd) {
       ne.textContent = rd.name || "Top Player";
@@ -361,15 +370,25 @@
         rd.rank || "?"
       }`;
       pte.textContent = `${rd.points || 0} pts`;
+      if (mne) mne.textContent = ne.textContent;
+      if (mpe) mpe.innerHTML = pe.innerHTML;
+      if (mpte) mpte.textContent = pte.textContent;
     } else {
       ne.textContent = "N/A (Log in)";
       pe.innerHTML = `<span class="text-gray-500 mr-1.5">🏆</span> N/A`;
       pte.textContent = "N/A";
+      if (mne) mne.textContent = ne.textContent;
+      if (mpe) mpe.innerHTML = pe.innerHTML;
+      if (mpte) mpte.textContent = pte.textContent;
     }
   }
 
   function updateLatestAchievementsSidebar(achs) {
     const l = document.getElementById("latest-achievements-list-ingame");
+    const ml = document.getElementById(
+      "mobile-latest-achievements-list-ingame"
+    );
+
     if (!l) return;
     l.innerHTML = "";
     if (achs && achs.length > 0) {
@@ -383,6 +402,10 @@
     } else {
       l.innerHTML =
         '<li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 italic">None yet. Log in to track!</li>';
+    }
+
+    if (ml) {
+      ml.innerHTML = l.innerHTML;
     }
   }
 
@@ -484,6 +507,7 @@
 
     updateGameHeaderUserInfo() {
       const gui = this.rightInfoArea?.querySelector("#game-user-info");
+      const mgui = document.getElementById("mobile-game-user-info");
       if (gui) {
         if (this.userId && this.userProfileData) {
           let teamTag =
@@ -495,9 +519,17 @@
           gui.textContent =
             `${this.userProfileData.username} ${teamTag}`.trim();
           gui.title = gui.textContent;
+          if (mgui) {
+            mgui.textContent = gui.textContent;
+            mgui.title = gui.title;
+          }
         } else {
           gui.textContent = this.playerName;
           gui.title = this.playerName;
+          if (mgui) {
+            mgui.textContent = gui.textContent;
+            mgui.title = gui.title;
+          }
         }
       }
     }
@@ -641,6 +673,37 @@
         newChangeCatBtn.addEventListener("click", () =>
           this.showCategoryModal()
         );
+      }
+
+      // Mobile buttons events
+      const mobileQuitBtnIngame = document.getElementById(
+        "mobile-quit-to-menu-btn-ingame"
+      );
+      if (mobileQuitBtnIngame) {
+        const newMobileQuitBtn = mobileQuitBtnIngame.cloneNode(true);
+        mobileQuitBtnIngame.parentNode.replaceChild(
+          newMobileQuitBtn,
+          mobileQuitBtnIngame
+        );
+        newMobileQuitBtn.addEventListener("click", () => {
+          this.resetGameToMenu();
+          document.getElementById("mobile-info-modal").style.display = "none";
+        });
+      }
+
+      const mobileChangeCatBtnIngame = document.getElementById(
+        "mobile-change-category-btn-ingame"
+      );
+      if (mobileChangeCatBtnIngame) {
+        const newMobileChangeCatBtn = mobileChangeCatBtnIngame.cloneNode(true);
+        mobileChangeCatBtnIngame.parentNode.replaceChild(
+          newMobileChangeCatBtn,
+          mobileChangeCatBtnIngame
+        );
+        newMobileChangeCatBtn.addEventListener("click", () => {
+          this.showCategoryModal();
+          document.getElementById("mobile-info-modal").style.display = "none";
+        });
       }
     }
 
@@ -1106,6 +1169,7 @@
 
     updateTimerDisplay() {
       const timerElement = this.rightInfoArea?.querySelector("#timer");
+      const mtimerElement = document.getElementById("mobile-timer");
       if (!timerElement) return;
       if (this.difficulty === "hard" && this.timeLeft !== null) {
         timerElement.textContent = `${this.timeLeft}s`;
@@ -1117,34 +1181,59 @@
           "text-text-secondary",
           this.timeLeft > 10
         );
+        if (mtimerElement) {
+          mtimerElement.textContent = timerElement.textContent;
+        }
       } else {
         timerElement.textContent = "-";
+        if (mtimerElement) {
+          mtimerElement.textContent = timerElement.textContent;
+        }
       }
     }
 
     updateDifficultyDisplay() {
       const difficultyElement =
         this.rightInfoArea?.querySelector("#difficulty-mode");
+      const mdifficultyElement = document.getElementById(
+        "mobile-difficulty-mode"
+      );
       if (difficultyElement) {
         difficultyElement.textContent =
           this.difficulty === "easy" ? `Easy Mode` : `Hard Mode`;
         difficultyElement.className = `text-base font-medium ${
           this.difficulty === "hard" ? "text-red-400" : "text-green-400"
         }`;
+        if (mdifficultyElement) {
+          mdifficultyElement.textContent = difficultyElement.textContent;
+        }
       }
     }
 
     updateScoreDisplay() {
       const scoreElement = this.rightInfoArea?.querySelector("#score");
-      if (scoreElement) scoreElement.textContent = this.score;
+      const mscoreElement = document.getElementById("mobile-score");
+      if (scoreElement) {
+        scoreElement.textContent = this.score;
+        if (mscoreElement) {
+          mscoreElement.textContent = scoreElement.textContent;
+        }
+      }
     }
 
     updateCategoryDisplay() {
       const categoryDisplayElement =
         this.rightInfoArea?.querySelector("#category-display");
+      const mcategoryDisplayElement = document.getElementById(
+        "mobile-category-display"
+      );
       if (categoryDisplayElement) {
         categoryDisplayElement.textContent =
           this.category.charAt(0).toUpperCase() + this.category.slice(1);
+        if (mcategoryDisplayElement) {
+          mcategoryDisplayElement.textContent =
+            categoryDisplayElement.textContent;
+        }
       }
     }
 
