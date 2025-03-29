@@ -456,13 +456,19 @@
       this.boundHandleModalKeyDown = this.handleModalKeyDown.bind(this);
       this.boundHandleCategoryModalKeyDown =
         this.handleCategoryModalKeyDown.bind(this);
+      this.boundHandleDifficultyModalKeyDown =
+        this.handleDifficultyModalKeyDown.bind(this);
       this.gameContainer = document.getElementById("game-container");
       this.gameCenterArea = document.getElementById("game-center-area");
       this.rightInfoArea = document.getElementById("in-game-right-info");
       this.toastContainer = document.getElementById("toast-container");
       this.categoryModal = document.getElementById("category-modal");
+      this.difficultyModal = document.getElementById("difficulty-modal");
       this.mobileCategoryDisplay = document.getElementById(
         "mobile-category-display"
+      );
+      this.mobileDifficultyDisplay = document.getElementById(
+        "mobile-difficulty-display"
       );
       this.mobileTimerDisplay = document.getElementById("mobile-timer");
 
@@ -654,7 +660,21 @@
           this.showCategoryModal()
         );
       }
-      //Mobile
+
+      const changeDiffBtnIngame = document.getElementById(
+        "change-difficulty-btn-ingame"
+      );
+      if (changeDiffBtnIngame) {
+        const newChangeDiffBtn = changeDiffBtnIngame.cloneNode(true);
+        changeDiffBtnIngame.parentNode.replaceChild(
+          newChangeDiffBtn,
+          changeDiffBtnIngame
+        );
+        newChangeDiffBtn.addEventListener("click", () =>
+          this.showDifficultyModal()
+        );
+      }
+
       const changeCatBtnMobile = document.getElementById(
         "change-category-btn-mobile"
       );
@@ -668,12 +688,32 @@
           this.showCategoryModal()
         );
       }
+
+      const changeDiffBtnMobile = document.getElementById(
+        "change-difficulty-btn-mobile"
+      );
+      if (changeDiffBtnMobile) {
+        const newChangeDiffBtnMobile = changeDiffBtnMobile.cloneNode(true);
+        changeDiffBtnMobile.parentNode.replaceChild(
+          newChangeDiffBtnMobile,
+          changeDiffBtnMobile
+        );
+        newChangeDiffBtnMobile.addEventListener("click", () =>
+          this.showDifficultyModal()
+        );
+      }
     }
 
     handleKeyDown(event) {
       if (
         this.gameOver ||
-        !document.getElementById("message-box")?.classList.contains("hidden")
+        !document.getElementById("message-box")?.classList.contains("hidden") ||
+        !document
+          .getElementById("category-modal")
+          ?.classList.contains("hidden") ||
+        !document
+          .getElementById("difficulty-modal")
+          ?.classList.contains("hidden")
       )
         return;
 
@@ -1158,11 +1198,16 @@
       const difficultyElement =
         this.rightInfoArea?.querySelector("#difficulty-mode");
       if (difficultyElement) {
-        difficultyElement.textContent =
+        const difficultyText =
           this.difficulty === "easy" ? `Easy Mode` : `Hard Mode`;
+        difficultyElement.textContent = difficultyText;
         difficultyElement.className = `text-base font-medium ${
           this.difficulty === "hard" ? "text-red-400" : "text-green-400"
         }`;
+        if (this.mobileDifficultyDisplay) {
+          this.mobileDifficultyDisplay.textContent =
+            this.difficulty === "easy" ? `Easy` : `Hard`;
+        }
       }
     }
 
@@ -1388,6 +1433,129 @@
       }
     }
 
+    showDifficultyModal() {
+      if (!this.difficultyModal) return;
+
+      const optionsContainer = this.difficultyModal.querySelector(
+        "#difficulty-options-container"
+      );
+      const cancelBtn = this.difficultyModal.querySelector(
+        "#cancel-difficulty-change-btn"
+      );
+      if (!optionsContainer || !cancelBtn) return;
+
+      optionsContainer.innerHTML = "";
+      const difficulties = ["easy", "hard"];
+
+      difficulties.forEach((diffKey) => {
+        const button = document.createElement("button");
+        button.textContent = diffKey.charAt(0).toUpperCase() + diffKey.slice(1);
+        button.dataset.difficulty = diffKey;
+        button.className = `w-full bg-input-bg hover:bg-key-bg text-text-secondary font-medium py-3 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50`;
+
+        if (diffKey === this.difficulty) {
+          button.disabled = true;
+          button.classList.add("opacity-50", "cursor-not-allowed");
+          button.classList.remove("hover:bg-key-bg");
+        }
+
+        button.addEventListener("click", () => {
+          this.changeDifficultyAndRestart(diffKey);
+          this.hideDifficultyModal();
+        });
+        optionsContainer.appendChild(button);
+      });
+
+      const newCancelBtn = cancelBtn.cloneNode(true);
+      cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+      newCancelBtn.addEventListener("click", () => this.hideDifficultyModal(), {
+        once: true,
+      });
+
+      this.difficultyModal.classList.remove("hidden");
+      this.difficultyModal.focus();
+
+      document.addEventListener(
+        "keydown",
+        this.boundHandleDifficultyModalKeyDown
+      );
+
+      const firstButton = optionsContainer.querySelector(
+        "button:not([disabled])"
+      );
+      if (firstButton) {
+        firstButton.focus();
+      } else {
+        newCancelBtn.focus();
+      }
+    }
+
+    hideDifficultyModal() {
+      if (!this.difficultyModal) return;
+      this.difficultyModal.classList.add("hidden");
+      document.removeEventListener(
+        "keydown",
+        this.boundHandleDifficultyModalKeyDown
+      );
+    }
+
+    handleDifficultyModalKeyDown(event) {
+      if (
+        !this.difficultyModal ||
+        this.difficultyModal.classList.contains("hidden")
+      )
+        return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        this.hideDifficultyModal();
+      } else if (event.key === "Tab") {
+        const focusableElements = Array.from(
+          this.difficultyModal.querySelectorAll("button")
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            event.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            event.preventDefault();
+          }
+        }
+      }
+    }
+
+    changeDifficultyAndRestart(newDifficulty) {
+      if (this.difficulty === newDifficulty) return;
+
+      console.log(
+        `Changing difficulty from ${this.difficulty} to ${newDifficulty}`
+      );
+      this.difficulty = newDifficulty;
+      this.updateDifficultyDisplay();
+      showToast(
+        `Difficulty changed to ${
+          this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1)
+        }. New game starting!`,
+        3500
+      );
+
+      this.resetGameState();
+      this.createGameBoard();
+      this.createKeyboard();
+      this.updateScoreDisplay();
+      this.updateTimerDisplay();
+      this.updateCategoryDisplay();
+      if (this.timeLeft !== null) {
+        this.startTimer();
+      }
+    }
+
     restartGame() {
       this.resetGameState();
       this.createGameBoard();
@@ -1399,6 +1567,8 @@
       if (this.timeLeft !== null) this.startTimer();
       const messageBox = document.getElementById("message-box");
       if (messageBox) messageBox.classList.add("hidden");
+      this.hideCategoryModal();
+      this.hideDifficultyModal();
     }
 
     resetGameState() {
@@ -1431,6 +1601,10 @@
         "keydown",
         this.boundHandleCategoryModalKeyDown
       );
+      document.removeEventListener(
+        "keydown",
+        this.boundHandleDifficultyModalKeyDown
+      );
 
       const keyboardElement = this.gameCenterArea?.querySelector("#keyboard");
       if (keyboardElement && keyboardElement._listener) {
@@ -1441,6 +1615,9 @@
       const messageBox = document.getElementById("message-box");
       if (messageBox)
         messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
+
+      this.hideCategoryModal();
+      this.hideDifficultyModal();
 
       const quitBtnIngame = document.getElementById("quit-to-menu-btn-ingame");
       if (quitBtnIngame) {
@@ -1457,7 +1634,17 @@
           changeCatBtnIngame
         );
       }
-      //Mobile
+      const changeDiffBtnIngame = document.getElementById(
+        "change-difficulty-btn-ingame"
+      );
+      if (changeDiffBtnIngame) {
+        const newChangeDiffBtn = changeDiffBtnIngame.cloneNode(true);
+        changeDiffBtnIngame.parentNode.replaceChild(
+          newChangeDiffBtn,
+          changeDiffBtnIngame
+        );
+      }
+
       const changeCatBtnMobile = document.getElementById(
         "change-category-btn-mobile"
       );
@@ -1466,6 +1653,16 @@
         changeCatBtnMobile.parentNode.replaceChild(
           newChangeCatBtnMobile,
           changeCatBtnMobile
+        );
+      }
+      const changeDiffBtnMobile = document.getElementById(
+        "change-difficulty-btn-mobile"
+      );
+      if (changeDiffBtnMobile) {
+        const newChangeDiffBtnMobile = changeDiffBtnMobile.cloneNode(true);
+        changeDiffBtnMobile.parentNode.replaceChild(
+          newChangeDiffBtnMobile,
+          changeDiffBtnMobile
         );
       }
     }
