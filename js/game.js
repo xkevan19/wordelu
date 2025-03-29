@@ -209,45 +209,44 @@
         if (currentUser && (!prevUser || currentUser.id !== prevUser.id)) {
           await fetchUserProfile(currentUser.id);
           handleLoggedInState();
-          if (!currentGameInstance) await loadAndDisplayInitialData();
-          else updateGameHeaderUserInfo();
         } else if (!currentUser && prevUser) {
           userProfile = null;
           handleGuestState();
-          if (!currentGameInstance) await loadAndDisplayInitialData();
-          else {
-            showToast("Logged out. Returning to menu.");
-            currentGameInstance.resetGameToMenu();
-          }
         }
+
+        if (!currentGameInstance) {
+          await loadAndDisplayInitialData();
+          showDashboardView();
+        } else {
+          updateGameHeaderUserInfo();
+        }
+        updateSidebarButtonsVisibility();
       });
 
       await loadAndDisplayInitialData();
+      showDashboardView();
     } catch (error) {
       console.error("Supabase Initialization Error:", error);
       showToast(`Error initializing: ${error.message}`);
       handleGuestState();
       await loadAndDisplayInitialData();
+      showDashboardView();
     }
   }
 
   function updateUserStatusHeader() {
     const userActions = document.getElementById("user-actions");
     if (!userActions) return;
-
     userActions.innerHTML = "";
-
     if (currentUser && userProfile) {
       const welcomeText = document.createElement("span");
       welcomeText.className = "text-sm text-text-secondary hidden sm:inline";
       welcomeText.textContent = `Hi, ${userProfile.username}!`;
-
       const accountLink = document.createElement("a");
       accountLink.href = "account.html";
       accountLink.className =
         "text-sm bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-1 px-3 rounded-md transition duration-200";
       accountLink.textContent = "Account";
-
       const logoutButton = document.createElement("button");
       logoutButton.id = "nav-logout-button";
       logoutButton.className =
@@ -267,7 +266,6 @@
           console.log("Logout initiated...");
         }
       });
-
       userActions.appendChild(welcomeText);
       userActions.appendChild(accountLink);
       userActions.appendChild(logoutButton);
@@ -275,15 +273,24 @@
       const guestText = document.createElement("span");
       guestText.className = "text-sm text-text-muted hidden sm:inline";
       guestText.textContent = "Playing as Guest";
-
       const loginLink = document.createElement("a");
       loginLink.href = "auth.html";
       loginLink.className =
         "text-sm bg-primary hover:bg-primary-hover text-white font-semibold py-1 px-3 rounded-md transition duration-200";
       loginLink.textContent = "Login / Sign Up";
-
       userActions.appendChild(guestText);
       userActions.appendChild(loginLink);
+    }
+  }
+
+  function updateSidebarButtonsVisibility() {
+    const teamButton = document.getElementById("show-team-leaderboard-btn");
+    if (teamButton) {
+      if (currentUser && userProfile?.team) {
+        teamButton.classList.remove("hidden");
+      } else {
+        teamButton.classList.add("hidden");
+      }
     }
   }
 
@@ -292,8 +299,6 @@
     const playerNameInput = document.getElementById("player-name");
     const welcomeMessage = document.getElementById("welcome-message");
     const teamButton = document.getElementById("show-team-leaderboard-btn");
-    const statsSection = document.getElementById("statistics-section");
-    const achievementsSection = document.getElementById("achievements-section");
 
     if (playerNameInput) {
       playerNameInput.value = localStorage.getItem("wordleGuestName") || "";
@@ -310,9 +315,7 @@
       welcomeMessage.textContent = "Log in to save progress & compete!";
     }
     if (teamButton) teamButton.classList.add("hidden");
-
     updateUserStatusHeader();
-
     updateStatisticsDisplayGlobal(null);
     updateAchievementsDisplayGlobal(null);
     updateTeamLeaderboardDisplay(null);
@@ -336,7 +339,6 @@
     } else if (welcomeMessage) {
       welcomeMessage.textContent = `Welcome back!`;
     }
-
     if (teamButton) {
       if (userProfile?.team) {
         teamButton.classList.remove("hidden");
@@ -344,7 +346,6 @@
         teamButton.classList.add("hidden");
       }
     }
-
     updateUserStatusHeader();
   }
 
@@ -359,7 +360,6 @@
         .select("username, team")
         .eq("id", userId)
         .single();
-
       if (error && status !== 406) {
         console.error("Error fetching user profile:", error);
         userProfile = null;
@@ -370,6 +370,44 @@
     } catch (error) {
       console.error("Exception fetching user profile:", error);
       userProfile = null;
+    }
+  }
+
+  function updateRankingSidebar(rankData) {
+    const card = document.getElementById("player-rank-card");
+    const nameEl = document.getElementById("rank-player-name");
+    const posEl = document.getElementById("rank-position");
+    const pointsEl = document.getElementById("rank-points");
+    if (!card || !nameEl || !posEl || !pointsEl) return;
+    if (rankData) {
+      nameEl.textContent = rankData.name || "Top Player";
+      posEl.innerHTML = `<span class="text-yellow-400 mr-1.5">🏆</span> ranked #${
+        rankData.rank || "?"
+      }`;
+      pointsEl.textContent = `with ${rankData.points || 0} points`;
+    } else {
+      nameEl.textContent = "No Rank Data";
+      posEl.innerHTML = `<span class="text-gray-500 mr-1.5">🏆</span> Not Ranked`;
+      pointsEl.textContent = "Play games to get ranked!";
+    }
+  }
+
+  function updateLatestAchievementsSidebar(achievements) {
+    const list = document.getElementById("latest-achievements-list");
+    if (!list) return;
+    list.innerHTML = "";
+    if (achievements && achievements.length > 0) {
+      achievements.slice(0, 3).forEach((ach) => {
+        const li = document.createElement("li");
+        li.className =
+          "bg-black bg-opacity-20 rounded-lg p-1.5 px-2.5 truncate";
+        li.textContent = typeof ach === "string" ? ach : ach.name;
+        li.title = typeof ach === "string" ? ach : ach.name;
+        list.appendChild(li);
+      });
+    } else {
+      list.innerHTML =
+        '<li class="bg-black bg-opacity-20 rounded-lg p-1.5 px-2.5 text-gray-300 italic">No achievements yet.</li>';
     }
   }
 
@@ -418,7 +456,6 @@
       this.gameOver = false;
       this.gameWon = false;
       this.guessedLetters = new Set();
-
       this.sounds = {
         correct: new Howl({
           src: ["sound/correct.wav"],
@@ -451,7 +488,6 @@
             console.error("Howler load error (lose):", err),
         }),
       };
-
       this.playerStats = {
         totalGamesPlayed: 0,
         totalWins: 0,
@@ -460,9 +496,10 @@
         totalScore: 0,
       };
       this.achievements = {};
-
       this.boundHandleKeyDown = this.handleKeyDown.bind(this);
       this.boundHandleModalKeyDown = this.handleModalKeyDown.bind(this);
+      this.gameContainer = document.getElementById("game-container-wrapper");
+      this.toastContainer = document.getElementById("toast-container");
 
       this.initGameData()
         .then(() => {
@@ -488,12 +525,17 @@
           this.updateDifficultyDisplay();
           this.updateGameHeaderUserInfo();
         });
-
       document
         .getElementById("back-to-menu-btn")
-        .addEventListener("click", () => {
+        ?.addEventListener("click", () => {
           this.resetGameToMenu();
         });
+      const quitBtn = document.getElementById("quit-btn");
+      if (quitBtn) {
+        const newQuitBtn = quitBtn.cloneNode(true);
+        quitBtn.parentNode.replaceChild(newQuitBtn, quitBtn);
+        newQuitBtn.addEventListener("click", () => this.resetGameToMenu());
+      }
     }
 
     updateGameHeaderUserInfo() {
@@ -562,7 +604,11 @@
     }
 
     createGameBoard() {
-      const gameBoard = document.getElementById("game-board");
+      const gameBoard = this.gameContainer?.querySelector("#game-board");
+      if (!gameBoard) {
+        console.error("#game-board not found within #game-container-wrapper");
+        return;
+      }
       gameBoard.innerHTML = "";
       const fragment = document.createDocumentFragment();
       for (let row = 0; row < this.MAX_ATTEMPTS; row++) {
@@ -586,7 +632,11 @@
         ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
         ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "⌫"],
       ];
-      const keyboard = document.getElementById("keyboard");
+      const keyboard = this.gameContainer?.querySelector("#keyboard");
+      if (!keyboard) {
+        console.error("#keyboard not found within #game-container-wrapper");
+        return;
+      }
       keyboard.innerHTML = "";
       const fragment = document.createDocumentFragment();
       keyboardRows.forEach((row) => {
@@ -610,6 +660,7 @@
 
     setupEventListeners() {
       const keyboardElement = document.getElementById("keyboard");
+      if (!keyboardElement) return;
       if (keyboardElement.listener) {
         keyboardElement.removeEventListener("click", keyboardElement.listener);
       }
@@ -677,16 +728,12 @@
         this.showToast("Not enough letters!");
         return;
       }
-
       const guess = this.currentGuess.join("");
       const result = this.checkGuess(guess);
       const currentRowToUpdate = this.currentRow;
-
       this.updateRowColors(result, currentRowToUpdate);
       this.updateKeyboardColors(guess, result);
-
       const animationDuration = this.WORD_LENGTH * 200 + 100;
-
       if (guess === this.targetWord) {
         setTimeout(() => this.handleWin(), animationDuration);
       } else {
@@ -706,7 +753,6 @@
       const targetLetters = this.targetWord.split("");
       const guessLetters = guess.split("");
       let guessScore = 0;
-
       for (let i = 0; i < this.WORD_LENGTH; i++) {
         if (guessLetters[i] === targetLetters[i]) {
           result[i] = "correct";
@@ -811,17 +857,14 @@
       this.gameWon = true;
       clearInterval(this.timerInterval);
       const currentGameScore = this.score;
-
       if (this.userId && _supabase) {
         this.playerStats.totalGamesPlayed++;
         this.playerStats.totalWins++;
         this.playerStats.categoriesWon.add(this.category);
         if (this.difficulty === "hard") this.playerStats.hardModeWins++;
         this.playerStats.totalScore += currentGameScore;
-
         updateStatisticsDisplayGlobal(this.playerStats);
         updateAchievementsDisplayGlobal(this.achievements);
-
         let message = `🎉 You got it: ${this.targetWord}! Score: ${currentGameScore}. Your total score is now ${this.playerStats.totalScore}.`;
         const unlockedAchievements = this.checkAchievements();
         if (unlockedAchievements.length > 0) {
@@ -848,7 +891,6 @@
         await loadAndDisplayLeaderboard();
         updateStatisticsDisplayGlobal(null);
         updateAchievementsDisplayGlobal(null);
-
         let message = `🎉 You guessed it: ${this.targetWord}! Score for this game: ${currentGameScore}.`;
         message += `\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save your scores and track achievements!`;
         this.showMessage("You Won!", message, true);
@@ -860,7 +902,6 @@
       if (this.gameOver) return;
       this.gameOver = true;
       clearInterval(this.timerInterval);
-
       if (this.userId && _supabase) {
         this.playerStats.totalGamesPlayed++;
         try {
@@ -873,14 +914,12 @@
         }
         updateStatisticsDisplayGlobal(this.playerStats);
         updateAchievementsDisplayGlobal(this.achievements);
-
         let message = `😥 The word was: ${this.targetWord}. Better luck next time! Your total score remains ${this.playerStats.totalScore}.`;
         this.showMessage("Game Over", message);
       } else {
         updateStatisticsDisplayGlobal(null);
         updateAchievementsDisplayGlobal(null);
         await loadAndDisplayLeaderboard();
-
         let message = `😥 The word was: ${this.targetWord}. Score: ${this.score}.`;
         message += `\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save scores!`;
         this.showMessage("Game Over", message, true);
@@ -1163,34 +1202,31 @@
         return;
 
       messageTitle.textContent = title;
-      if (allowHtml) {
-        messageText.innerHTML = text;
-      } else {
-        messageText.textContent = text;
-      }
+      if (allowHtml) messageText.innerHTML = text;
+      else messageText.textContent = text;
+
+      const newGameBtnClone = newGameBtn.cloneNode(true);
+      newGameBtn.parentNode.replaceChild(newGameBtnClone, newGameBtn);
+      const quitBtnClone = quitBtn.cloneNode(true);
+      quitBtn.parentNode.replaceChild(quitBtnClone, quitBtn);
+
       messageBox.classList.remove("hidden");
-      newGameBtn.focus();
+      newGameBtnClone.focus();
 
       messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
       messageBox.addEventListener("keydown", this.boundHandleModalKeyDown);
 
       const handleNewGame = () => {
-        messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
         messageBox.classList.add("hidden");
         this.restartGame();
-        newGameBtn.removeEventListener("click", handleNewGame);
-        quitBtn.removeEventListener("click", handleQuit);
       };
       const handleQuit = () => {
-        messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
         messageBox.classList.add("hidden");
         this.resetGameToMenu();
-        newGameBtn.removeEventListener("click", handleNewGame);
-        quitBtn.removeEventListener("click", handleQuit);
       };
 
-      newGameBtn.addEventListener("click", handleNewGame, { once: true });
-      quitBtn.addEventListener("click", handleQuit, { once: true });
+      newGameBtnClone.addEventListener("click", handleNewGame, { once: true });
+      quitBtnClone.addEventListener("click", handleQuit, { once: true });
     }
 
     handleModalKeyDown(event) {
@@ -1253,18 +1289,10 @@
 
     resetGameToMenu() {
       this.destroy();
-      document.getElementById("game-container")?.classList.add("hidden");
-      document.getElementById("menu-container")?.classList.remove("hidden");
-      const gameUserInfoEl = document.getElementById("game-user-info");
-      if (gameUserInfoEl) gameUserInfoEl.classList.add("hidden");
-
-      loadAndDisplayInitialData().then(() => {
-        if (currentUser) {
-          handleLoggedInState();
-        } else {
-          handleGuestState();
-        }
-      });
+      currentGameInstance = null;
+      showDashboardView();
+      loadAndDisplayInitialData();
+      updateSidebarButtonsVisibility();
     }
 
     destroy() {
@@ -1296,6 +1324,79 @@
 
   let currentGameInstance = null;
 
+  function showDashboardView() {
+    console.log("Showing Dashboard View");
+    document
+      .getElementById("main-dashboard-content")
+      ?.classList.remove("hidden");
+    document.getElementById("game-container-wrapper")?.classList.add("hidden");
+    document.getElementById("sections-display-area")?.classList.add("hidden");
+    document
+      .getElementById("back-to-menu-from-sections-btn")
+      ?.classList.add("hidden");
+  }
+
+  function showGameView() {
+    console.log("Showing Game View");
+    document.getElementById("main-dashboard-content")?.classList.add("hidden");
+    document
+      .getElementById("game-container-wrapper")
+      ?.classList.remove("hidden");
+    document.getElementById("sections-display-area")?.classList.add("hidden");
+    document
+      .getElementById("back-to-menu-from-sections-btn")
+      ?.classList.add("hidden");
+  }
+
+  function showSectionsView() {
+    console.log("Showing Sections View Area");
+    document.getElementById("main-dashboard-content")?.classList.add("hidden");
+    document.getElementById("game-container-wrapper")?.classList.add("hidden");
+    document
+      .getElementById("sections-display-area")
+      ?.classList.remove("hidden");
+    document
+      .getElementById("back-to-menu-from-sections-btn")
+      ?.classList.remove("hidden");
+  }
+
+  function showSection(sectionId) {
+    showSectionsView();
+    const sectionsArea = document.getElementById("sections-display-area");
+    if (sectionsArea) {
+      Array.from(sectionsArea.children).forEach((child) => {
+        if (
+          child.id &&
+          (child.id.endsWith("-section") || child.id.endsWith("-btn"))
+        ) {
+          if (child.id !== "back-to-menu-from-sections-btn") {
+            child.classList.add("hidden");
+          }
+        }
+      });
+    } else {
+      console.error("#sections-display-area not found!");
+      return;
+    }
+    const sectionToShow = document.getElementById(sectionId);
+    if (sectionToShow) {
+      sectionToShow.classList.remove("hidden");
+      console.log(`Showing specific section: ${sectionId}`);
+    } else {
+      console.error(`Section with ID ${sectionId} not found!`);
+    }
+    if (sectionId === "leaderboard-section") loadAndDisplayLeaderboard();
+    else if (sectionId === "statistics-section") loadAndDisplayStatistics();
+    else if (sectionId === "achievements-section") loadAndDisplayAchievements();
+    else if (sectionId === "team-leaderboard-section")
+      loadAndDisplayTeamLeaderboard();
+    document.getElementById("sidebar")?.classList.add("-translate-x-full");
+  }
+
+  function showDashboardViewFromSections() {
+    showDashboardView();
+  }
+
   document
     .getElementById("show-leaderboard-btn")
     ?.addEventListener("click", () => showSection("leaderboard-section"));
@@ -1310,73 +1411,66 @@
     ?.addEventListener("click", () => showSection("instructions-section"));
   document
     .getElementById("show-team-leaderboard-btn")
-    ?.addEventListener("click", () => {
-      showSection("team-leaderboard-section");
-      loadAndDisplayTeamLeaderboard();
-    });
+    ?.addEventListener("click", () => showSection("team-leaderboard-section"));
   document
     .getElementById("back-to-menu-from-sections-btn")
-    ?.addEventListener("click", showMenuFromSections);
-
-  function showSection(sectionId) {
-    [
-      "leaderboard-section",
-      "statistics-section",
-      "achievements-section",
-      "instructions-section",
-      "team-leaderboard-section",
-      "main-menu-input-card",
-      "menu-buttons-container",
-    ].forEach((id) => document.getElementById(id)?.classList.add("hidden"));
-
-    const sectionToShow = document.getElementById(sectionId);
-    if (sectionToShow) sectionToShow.classList.remove("hidden");
-    document
-      .getElementById("back-to-menu-from-sections-btn")
-      ?.classList.remove("hidden");
-
-    if (sectionId === "leaderboard-section") loadAndDisplayLeaderboard();
-    else if (sectionId === "statistics-section") loadAndDisplayStatistics();
-    else if (sectionId === "achievements-section") loadAndDisplayAchievements();
-    else if (sectionId === "team-leaderboard-section")
-      loadAndDisplayTeamLeaderboard();
-  }
-
-  function showMenuFromSections() {
-    [
-      "leaderboard-section",
-      "statistics-section",
-      "achievements-section",
-      "instructions-section",
-      "team-leaderboard-section",
-      "back-to-menu-from-sections-btn",
-    ].forEach((id) => document.getElementById(id)?.classList.add("hidden"));
-    document.getElementById("main-menu-input-card")?.classList.remove("hidden");
-    document
-      .getElementById("menu-buttons-container")
-      ?.classList.remove("hidden");
-
-    if (!currentUser) handleGuestState();
-    else handleLoggedInState();
-  }
+    ?.addEventListener("click", showDashboardViewFromSections);
+  document
+    .getElementById("quit-to-menu-btn")
+    ?.addEventListener("click", showDashboardView);
 
   async function loadAndDisplayInitialData() {
+    let topPlayerData = null;
+    if (_supabase) {
+      try {
+        const { data, error } = await _supabase
+          .from("game_stats")
+          .select("total_score, profile:profiles!inner(username)")
+          .order("total_score", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          topPlayerData = {
+            rank: 1,
+            name: data.profile?.username || "Top Player",
+            points: data.total_score || 0,
+          };
+        }
+      } catch (error) {
+        console.error("Error fetching top player for sidebar:", error);
+      }
+    }
+    updateRankingSidebar(topPlayerData);
+
+    let latestAchievementsData = null;
+    if (currentUser && _supabase) {
+      try {
+        const { data, error } = await _supabase
+          .from("achievements")
+          .select("achievement_id, created_at")
+          .eq("user_id", currentUser.id)
+          .order("created_at", { ascending: false })
+          .limit(3);
+        if (error) throw error;
+        if (data) {
+          latestAchievementsData = data.map(
+            (a) => ACHIEVEMENTS[a.achievement_id]?.name || a.achievement_id
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching latest achievements for sidebar:", error);
+      }
+    }
+    updateLatestAchievementsSidebar(latestAchievementsData);
+
     await Promise.all([
       loadAndDisplayLeaderboard(),
       loadAndDisplayStatistics(),
       loadAndDisplayAchievements(),
       loadAndDisplayTeamLeaderboard(),
     ]);
-    if (!currentUser) {
-      document
-        .getElementById("show-team-leaderboard-btn")
-        ?.classList.add("hidden");
-    } else {
-      const teamButton = document.getElementById("show-team-leaderboard-btn");
-      if (teamButton && userProfile?.team)
-        teamButton.classList.remove("hidden");
-      else if (teamButton) teamButton.classList.add("hidden");
-    }
+    updateSidebarButtonsVisibility();
   }
 
   async function loadAndDisplayLeaderboard() {
@@ -1385,7 +1479,6 @@
     leaderboardBody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-text-muted">Loading Leaderboard...</td></tr>`;
     let leaderboardData = [];
     let isLocal = false;
-
     try {
       if (currentUser && _supabase) {
         const { data, error } = await _supabase
@@ -1435,7 +1528,6 @@
     if (!leaderboardBody) return;
     leaderboardBody.innerHTML = "";
     const fragment = document.createDocumentFragment();
-
     if (!leaderboardData || leaderboardData.length === 0) {
       const row = document.createElement("tr");
       row.innerHTML = `<td colspan="4" class="px-4 py-4 text-center text-text-muted">No scores yet! ${
@@ -1450,7 +1542,6 @@
         const score = isLocal ? entry.score : entry.total_score;
         const team = isLocal ? "N/A" : entry.profile?.team || "N/A";
         const isGuestEntry = isLocal;
-
         const row = document.createElement("tr");
         row.className = index % 2 === 0 ? "bg-input-bg/50" : "";
         row.innerHTML = `
@@ -1476,9 +1567,7 @@
           )
           .eq("user_id", currentUser.id)
           .maybeSingle();
-
         if (error && status !== 406) throw error;
-
         if (data) {
           const statsData = {
             totalGamesPlayed: data.total_games_played || 0,
@@ -1509,13 +1598,10 @@
     const dlElement = document.querySelector("#statistics-section dl");
     const guestMessageElement = document.getElementById("stats-guest-message");
     const section = document.getElementById("statistics-section");
-
     if (!section) return;
-
     if (currentUser && stats && dlElement) {
       dlElement.classList.remove("hidden");
       if (guestMessageElement) guestMessageElement.classList.add("hidden");
-
       const defaultStats = {
         totalGamesPlayed: 0,
         totalWins: 0,
@@ -1525,13 +1611,11 @@
       const playerStats = { ...defaultStats, ...stats };
       if (!(playerStats.categoriesWon instanceof Set))
         playerStats.categoriesWon = new Set(playerStats.categoriesWon || []);
-
       document.getElementById("games-played").textContent =
         playerStats.totalGamesPlayed;
       document.getElementById("total-wins").textContent = playerStats.totalWins;
       document.getElementById("hard-mode-wins").textContent =
         playerStats.hardModeWins || 0;
-
       const categoriesWonEl = document.getElementById("categories-won");
       if (categoriesWonEl) {
         const categoriesArray = Array.from(playerStats.categoriesWon);
@@ -1584,23 +1668,18 @@
       "achievements-guest-message"
     );
     const section = document.getElementById("achievements-section");
-
     if (!section) return;
-
     if (currentUser && unlockedAchievements !== null && achievementsList) {
       achievementsList.innerHTML = "";
       if (guestMessageElement) guestMessageElement.classList.add("hidden");
       achievementsList.classList.remove("hidden");
-
       const fragment = document.createDocumentFragment();
       const allPossibleAchievements = Object.values(ACHIEVEMENTS);
-
       if (allPossibleAchievements.length === 0) {
         achievementsList.innerHTML =
           '<p class="text-text-muted col-span-full text-center">No achievements defined.</p>';
         return;
       }
-
       allPossibleAchievements.forEach((achievement) => {
         const isUnlocked = unlockedAchievements[achievement.id] === true;
         const achievementDiv = document.createElement("div");
@@ -1615,20 +1694,17 @@
                     isUnlocked
                       ? "text-yellow-400 filter grayscale-0"
                       : "text-gray-500 filter grayscale"
-                  }">
-                      ${achievement.icon} ${
+                  }"> ${achievement.icon} ${
           !isUnlocked
             ? '<span class="sr-only">(Locked)</span>'
             : '<span class="sr-only">(Unlocked)</span>'
-        }
-                  </div>
+        } </div>
                   <h3 class="text-lg font-semibold mb-1 text-text-primary">${
                     achievement.name
                   }</h3>
                   <p class="text-sm text-text-muted">${
                     achievement.description
-                  }</p>
-              `;
+                  }</p>`;
         fragment.appendChild(achievementDiv);
       });
       achievementsList.appendChild(fragment);
@@ -1650,12 +1726,10 @@
           '<tr><td colspan="2" class="text-center text-error py-4">Error: Cannot load team scores.</td></tr>';
       return;
     }
-
     if (!currentUser) {
       updateTeamLeaderboardDisplay(null);
       return;
     }
-
     teamBody.innerHTML =
       '<tr><td colspan="2" class="text-center text-text-muted py-4">Loading Team Scores...</td></tr>';
     try {
@@ -1686,7 +1760,6 @@
   function updateTeamLeaderboardDisplay(teamScores) {
     const teamBody = document.getElementById("team-leaderboard-body");
     if (!teamBody) return;
-
     if (currentUser && teamScores) {
       let blueStyle = "text-text-primary";
       let redStyle = "text-text-primary";
@@ -1696,8 +1769,7 @@
         redStyle = "text-red-400 font-bold";
       teamBody.innerHTML = `
               <tr class="border-b border-border-color"> <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td> <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td> </tr>
-              <tr> <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td> <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td> </tr>
-          `;
+              <tr> <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td> <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td> </tr>`;
     } else if (currentUser && teamScores === undefined) {
       teamBody.innerHTML =
         '<tr><td colspan="2" class="text-center text-error py-4">Error loading team scores.</td></tr>';
@@ -1712,12 +1784,10 @@
       currentGameInstance.destroy();
       currentGameInstance = null;
     }
-
     const nameInput = document.getElementById("player-name");
     let playerName = nameInput ? nameInput.value.trim() : null;
     const difficulty = document.getElementById("difficulty")?.value || "easy";
     const category = document.getElementById("category")?.value || "general";
-
     let finalPlayerName = "Guest";
     if (currentUser && userProfile?.username) {
       finalPlayerName = userProfile.username;
@@ -1726,12 +1796,8 @@
       localStorage.setItem("wordleGuestName", finalPlayerName);
     } else if (!currentUser) {
       finalPlayerName = "Guest";
-      localStorage.setItem("wordleGuestName", finalPlayerName);
     }
-
-    document.getElementById("menu-container")?.classList.add("hidden");
-    document.getElementById("game-container")?.classList.remove("hidden");
-
+    showGameView();
     currentGameInstance = new WordleGame(
       finalPlayerName,
       difficulty,
@@ -1739,11 +1805,10 @@
       currentUser?.id,
       userProfile
     );
+    document.getElementById("sidebar")?.classList.add("-translate-x-full");
   });
 
   document.addEventListener("DOMContentLoaded", () => {
-    initializeSupabase().then(() => {
-      showMenuFromSections();
-    });
+    initializeSupabase();
   });
 })();
