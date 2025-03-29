@@ -1,5 +1,3 @@
---- START OF FILE index.html ---
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -66,17 +64,40 @@
             display: none;
         }
 
-        /* Button to open the mobile info modal */
-        #mobile-info-toggle {
+        /* Mobile Game Info Banner */
+        #mobile-game-info-banner {
             display: flex;
-            /* Show on mobile */
-            justify-content: center;
+            justify-content: space-around;
             align-items: center;
+            background-color: rgba(51, 51, 51, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            /* Added text alignment */
+        }
+
+        #mobile-game-info-banner div {
+            flex: 1;
+            /* Distribute space evenly */
+            padding: 0 0.5rem;
+            /* Add some spacing */
+        }
+
+        #mobile-game-info-banner p {
+            margin: 0;
+            /* Remove default paragraph margins */
+            font-size: 0.875rem;
+            /* 14px */
+        }
+
+        /* Change Category Button */
+        #change-category-btn-mobile {
             position: fixed;
             bottom: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(51, 51, 51, 0.8);
+            left: 1rem;
+            background-color: #6366F1;
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -84,9 +105,11 @@
             cursor: pointer;
         }
 
-        /* Hide the toggle on larger screens */
+        /* Hide mobile specific elements on larger screens */
         @media (min-width: 1024px) {
-            #mobile-info-toggle {
+
+            #mobile-game-info-banner,
+            #change-category-btn-mobile {
                 display: none;
             }
 
@@ -94,56 +117,6 @@
             #in-game-right-info {
                 display: block;
             }
-        }
-
-        /* The Modal (hidden by default) */
-        .mobile-info-modal {
-            display: none;
-            /* Hidden by default */
-            position: fixed;
-            /* Stay in place */
-            z-index: 60;
-            /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%;
-            /* Full width */
-            height: 100%;
-            /* Full height */
-            overflow: auto;
-            /* Enable scroll if needed */
-            background-color: rgba(0, 0, 0, 0.4);
-            /* Black w/ opacity */
-        }
-
-        /* Modal Content/Box */
-        .mobile-info-modal-content {
-            background-color: #1A1A1B;
-            margin: 15% auto;
-            /* 15% from the top and centered */
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            /* Could be more or less, depending on screen size */
-            border-radius: 0.75rem;
-            color: #D1D5DB;
-            font-family: 'Inter', sans-serif;
-        }
-
-        /* The Close Button */
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close-button:hover,
-        .close-button:focus {
-            color: white;
-            text-decoration: none;
-            cursor: pointer;
         }
     </style>
 </head>
@@ -442,24 +415,20 @@
         </div>
 
         <div id="game-container" class="hidden flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-            <button id="mobile-info-toggle" class="lg:hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12v-.008z" />
-                </svg>
-                More Info
-            </button>
 
-            <!-- Mobile Info Modal -->
-            <div id="mobile-info-modal" class="mobile-info-modal">
-                <div class="mobile-info-modal-content">
-                    <span class="close-button">×</span>
-                    <h3>Game Details</h3>
-                    <div id="mobile-info-content">
-                    </div>
+            <div id="mobile-game-info-banner" class="lg:hidden">
+                <div>
+                    <p>Category:</p>
+                    <p id="mobile-category-display">General</p>
+                </div>
+                <div>
+                    <p>Time:</p>
+                    <p id="mobile-timer">-</p>
                 </div>
             </div>
+
+            <button id="change-category-btn-mobile" class="lg:hidden">Change Category</button>
+
             <aside id="in-game-left-column"
                 class="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-6 order-first mt-4 lg:mt-0">
                 <div class="bg-gradient-gold rounded-2xl p-5 shadow-lg text-white">
@@ -600,114 +569,6 @@
             closeDropdown();
         });
 
-        // Mobile info modal
-        const mobileInfoToggle = document.getElementById('mobile-info-toggle');
-        const mobileInfoModal = document.getElementById('mobile-info-modal');
-        const mobileInfoContent = document.getElementById('mobile-info-content');
-        const closeButton = document.querySelector('.close-button');
-
-        mobileInfoToggle.addEventListener('click', () => {
-            // Populate modal content
-
-            let leftColumnContent = `
-            <div class="bg-gradient-gold rounded-2xl p-5 shadow-lg text-white">
-                <h3 class="text-base font-semibold mb-3 text-black opacity-80">Latest Achievements</h3>
-                <ul class="space-y-2 text-sm" id="mobile-latest-achievements-list-ingame">
-                    <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Achievement #1</li>
-                    <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Achievement #2</li>
-                    <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Achievement #3</li>
-                </ul>
-            </div>
-            <div class="bg-gradient-blue-purple rounded-2xl p-5 shadow-lg text-white">
-                <p class="text-sm font-medium mb-1" id="mobile-rank-player-name-ingame">number 1 player_name</p>
-                <p class="text-lg font-semibold mb-2 flex items-center"><span class="text-yellow-400 mr-1.5">🏆</span>
-                    ranked #1</p>
-                <p class="text-sm font-medium" id="mobile-rank-points-ingame">with x points</p>
-            </div>
-            <div class="space-y-3">
-                <button id="mobile-quit-to-menu-btn-ingame"
-                    class="w-full bg-card-bg hover:bg-input-bg text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Quit
-                    to menu</button>
-                <button id="mobile-change-category-btn-ingame"
-                    class="w-full bg-card-bg hover:bg-input-bg text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Change
-                    Category</button>
-            </div>
-        `;
-
-            let rightColumnContent = `
-            <div class="bg-card-bg rounded-xl p-4 text-center shadow-md">
-                <p class="text-sm text-text-muted mb-1">Score</p>
-                <div class="text-2xl font-bold text-text-primary" aria-live="polite" id="mobile-score">0</div>
-            </div>
-            <div class="bg-card-bg rounded-xl p-4 text-center shadow-md">
-                <p class="text-sm text-text-muted mb-1">Player</p>
-                <div class="text-base font-medium text-text-secondary truncate" title="Player Name"
-                    id="mobile-game-user-info">Guest</div>
-            </div>
-            <div class="bg-card-bg rounded-xl p-4 text-center shadow-md">
-                <p class="text-sm text-text-muted mb-1">Mode</p>
-                <div class="text-base font-medium text-green-400" id="mobile-difficulty-mode">Easy Mode</div>
-            </div>
-            <div class="bg-card-bg rounded-xl p-4 text-center shadow-md">
-                <p class="text-sm text-text-muted mb-1">Category</p>
-                <div class="text-base font-medium text-primary capitalize" id="mobile-category-display">General</div>
-            </div>
-            <div class="bg-card-bg rounded-xl p-4 text-center shadow-md">
-                <p class="text-sm text-text-muted mb-1">Time Left</p>
-                <div class="text-base font-medium text-text-secondary" aria-live="polite" id="mobile-timer">-</div>
-            </div>
-        `;
-            mobileInfoContent.innerHTML = `
-                <div class="flex flex-col space-y-4">
-                ${leftColumnContent}
-                ${rightColumnContent}
-                </div>
-                `;
-
-            //Wire the dynamically created buttons
-            const mobileQuitBtnIngame = document.getElementById("mobile-quit-to-menu-btn-ingame");
-            if (mobileQuitBtnIngame) {
-                mobileQuitBtnIngame.addEventListener("click", () => {
-                    if (typeof currentGameInstance !== 'undefined' && currentGameInstance) {
-                        currentGameInstance.resetGameToMenu();
-                    }
-                    mobileInfoModal.style.display = "none";
-                });
-            }
-            const mobileChangeCatBtnIngame = document.getElementById("mobile-change-category-btn-ingame");
-            if (mobileChangeCatBtnIngame) {
-                mobileChangeCatBtnIngame.addEventListener("click", () => {
-                    if (typeof currentGameInstance !== 'undefined' && currentGameInstance) {
-                        currentGameInstance.showCategoryModal();
-                    }
-                    mobileInfoModal.style.display = "none";
-                });
-            }
-
-            if (typeof currentGameInstance !== 'undefined' && currentGameInstance) {
-                //Sync data to the dynamic modal
-                document.getElementById("mobile-latest-achievements-list-ingame").innerHTML = document.getElementById("latest-achievements-list-ingame").innerHTML;
-                document.getElementById("mobile-rank-player-name-ingame").textContent = document.getElementById("rank-player-name-ingame").textContent;
-                document.getElementById("mobile-rank-points-ingame").textContent = document.getElementById("rank-points-ingame").textContent;
-                document.getElementById("mobile-rank-position-ingame").innerHTML = document.getElementById("rank-position-ingame").innerHTML;
-                document.getElementById("mobile-game-user-info").textContent = document.getElementById("game-user-info").textContent;
-                document.getElementById("mobile-difficulty-mode").textContent = document.getElementById("difficulty-mode").textContent;
-                document.getElementById("mobile-category-display").textContent = document.getElementById("category-display").textContent;
-                document.getElementById("mobile-score").textContent = document.getElementById("score").textContent;
-                document.getElementById("mobile-timer").textContent = document.getElementById("timer").textContent;
-            }
-            mobileInfoModal.style.display = "block";
-        });
-
-        closeButton.addEventListener('click', () => {
-            mobileInfoModal.style.display = "none";
-        });
-
-        window.addEventListener('click', (event) => {
-            if (event.target == mobileInfoModal) {
-                mobileInfoModal.style.display = "none";
-            }
-        });
     </script>
 
 </body>
