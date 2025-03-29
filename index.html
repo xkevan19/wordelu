@@ -18,9 +18,10 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    // Using the color scheme from Wordle example
                     colors: { 'dark-background': '#121213', 'card-bg': '#1A1A1B', 'input-bg': '#27272A', 'border-color': '#3A3A3C', 'key-bg': '#333333', 'key-hover': '#444444', 'primary': '#6366F1', 'primary-hover': '#4F46E5', 'secondary': '#4B5563', 'secondary-hover': '#374151', 'correct': '#538D4E', 'present': '#B59F3B', 'absent': '#3A3A3C', 'text-primary': '#FFFFFF', 'text-secondary': '#D1D5DB', 'text-muted': '#9CA3AF', 'error': '#EF4444', 'success': '#10B981', 'overlay-gradient-start': '#6366F1', 'overlay-gradient-end': '#8B5CF6', 'gradient-gold-start': '#D4AF37', 'gradient-gold-end': '#B8860B', 'gradient-blue-start': '#4F46E5', 'gradient-blue-end': '#7C3AED', },
                     fontFamily: { 'galindo': ['Galindo', 'cursive'], 'sans': ['Inter', 'sans-serif'] },
-                    spacing: { 'grid-gap': '0.5rem', 'key-gap': '0.3rem', 'key-width': '2.8rem', 'enter-width': '4.5rem', 'key-height': '3.5rem', 'cell-size': '3.5rem', 'dashboard-grid-gap': '1rem', },
+                    spacing: { 'grid-gap': '0.5rem', 'key-gap': '0.3rem', 'key-width': '2.8rem', 'enter-width': '4.5rem', 'key-height': '3.5rem', 'cell-size': '3.5rem', 'dashboard-grid-gap': '1rem', }, // Keep dashboard-grid-gap in case needed elsewhere
                     boxShadow: { 'input-focus': '0 0 0 2px #6366F1', 'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', 'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', },
                     borderRadius: { 'xl': '0.75rem', '2xl': '1rem', },
                     zIndex: { '40': '40', '50': '50', '60': '60', '70': '70', '100': '100' },
@@ -37,13 +38,6 @@
 
         .bg-gradient-blue-purple {
             background-image: linear-gradient(to bottom, #1e40af, #3b0764);
-        }
-
-        .placeholder-square {
-            border: 1px solid theme('colors.border-color');
-            background-color: transparent;
-            border-radius: theme('borderRadius.md');
-            aspect-ratio: 1 / 1;
         }
 
         #app-sidebar {
@@ -66,6 +60,7 @@
                 <a href="index.html" class="text-2xl font-galindo text-primary">Wordle Challenge</a>
             </div>
             <div id="user-actions" class="flex items-center space-x-4">
+                <!-- Populated by JS -->
             </div>
         </div>
     </nav>
@@ -75,8 +70,9 @@
         class="fixed top-0 left-0 w-64 h-full bg-input-bg p-6 shadow-lg z-70 transform -translate-x-full md:hidden">
         <h2 class="text-xl font-semibold text-text-primary mb-4">Menu</h2>
         <ul class="space-y-2 text-text-secondary">
-            <li><a href="#" class="hover:text-primary">Home (Wordle Menu)</a></li>
-            <li><a href="#" class="hover:text-primary" id="sidebar-show-dashboard">Dashboard View</a></li>
+            <li><button class="hover:text-primary w-full text-left" id="sidebar-show-wordle-menu">Home (Wordle
+                    Menu)</button></li>
+            <!-- Remove dashboard view link from sidebar as it's integrated now -->
             <li><a href="account.html" class="hover:text-primary">Account</a></li>
             <li><button id="sidebar-logout-button" class="w-full text-left text-error hover:underline">Logout</button>
             </li>
@@ -195,15 +191,7 @@
                                 clip-rule="evenodd" />
                         </svg> How to Play
                     </button>
-                    <button id="show-dashboard-btn"
-                        class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                            class="w-5 h-5 mr-2">
-                            <path fill-rule="evenodd"
-                                d="M12.5 3a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4H3v12h8.5a.5.5 0 0 1 0 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h9.5Zm3.09 5.53a.5.5 0 0 1 .707 0l2.5 2.5a.5.5 0 0 1 0 .708l-2.5 2.5a.5.5 0 1 1-.707-.708L17.293 12l-1.7-1.768a.5.5 0 0 1 0-.708Z"
-                                clip-rule="evenodd" />
-                        </svg> Show Dashboard
-                    </button>
+                    <!-- Removed Show Dashboard Button from here -->
                 </div>
                 <button id="start-game-btn"
                     class="bg-primary hover:bg-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-200 ease-in-out font-sans">
@@ -211,6 +199,7 @@
                 </button>
             </div>
 
+            <!-- Sections display area (part of menu view) -->
             <div id="sections-display-area" class="w-full max-w-3xl mt-2 mb-6 mx-auto">
                 <div id="leaderboard-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
                     <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Leaderboard</h2>
@@ -440,119 +429,81 @@
             </div>
         </div>
 
-        <!-- 2. Dashboard View Container (Grid + Left Column) (Initially Hidden) -->
-        <div id="main-dashboard-content" class="hidden">
-            <div class="flex flex-col md:flex-row gap-6 lg:gap-8">
-                <!-- In-Game Left Column -->
-                <aside id="in-game-left-column" class="w-full md:w-64 lg:w-72 flex-shrink-0 space-y-6">
-                    <div class="bg-gradient-gold rounded-2xl p-5 shadow-lg text-white">
-                        <h3 class="text-base font-semibold mb-3 text-black opacity-80">Latest Achievements</h3>
-                        <ul id="latest-achievements-list-ingame" class="space-y-2 text-sm">
-                            <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Loading...</li>
-                        </ul>
-                    </div>
-                    <div id="player-rank-card-ingame"
-                        class="bg-gradient-blue-purple rounded-2xl p-5 shadow-lg text-white">
-                        <p id="rank-player-name-ingame" class="text-sm font-medium mb-1">Loading Rank...</p>
-                        <p id="rank-position-ingame" class="text-lg font-semibold mb-2 flex items-center"><span
-                                class="text-yellow-400 mr-1.5">🏆</span> Loading...</p>
-                        <p id="rank-points-ingame" class="text-sm font-medium">Loading...</p>
-                    </div>
-                    <div class="space-y-3">
-                        <button id="quit-to-menu-btn-ingame"
-                            class="w-full bg-card-bg hover:bg-input-bg text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Quit
-                            to menu</button>
-                        <button id="change-category-btn-ingame"
-                            class="w-full bg-card-bg hover:bg-input-bg text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Change
-                            Category</button>
-                    </div>
-                </aside>
-                <!-- Dashboard Main Area -->
-                <main id="dashboard-main-area" class="flex-grow flex flex-col">
-                    <div
-                        class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5 gap-dashboard-grid-gap mb-6 lg:mb-8">
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                        <div class="placeholder-square"></div>
-                    </div>
-                    <div class="bg-card-bg rounded-2xl p-4 md:p-6 min-h-[100px] md:min-h-[150px] mt-auto shadow-md">
-                        <p class="text-text-muted text-center italic">Dashboard description area. Select an item or
-                            return to the Wordle menu.</p>
-                    </div>
-                </main>
-            </div>
-        </div>
+        <!-- 2. Active Game Container (Initially Hidden) -->
+        <!-- Added flex layout -->
+        <div id="game-container" class="hidden flex flex-col md:flex-row gap-6 lg:gap-8">
 
-        <!-- 3. Active Game Container (Initially Hidden) -->
-        <div id="game-container" class="hidden relative w-full flex-grow flex flex-col items-center pt-4 sm:pt-8">
-            <div id="game-ui" class="w-full p-4 mb-4">
-                <div class="flex justify-between items-center flex-wrap gap-2">
-                    <div class="flex items-center gap-2">
-                        <div id="score" class="text-xl sm:text-2xl font-bold" aria-live="polite">Score: 0</div>
-                        <div id="game-user-info" class="text-sm sm:text-base text-text-muted hidden"></div>
-                    </div>
-                    <div id="difficulty-mode"
-                        class="text-lg sm:text-xl order-first sm:order-none w-full sm:w-auto text-center sm:text-left">
-                    </div>
-                    <div id="timer" class="text-lg sm:text-xl text-right" aria-live="polite"></div>
+            <!-- In-Game Left Column -->
+            <aside id="in-game-left-column" class="w-full md:w-64 lg:w-72 flex-shrink-0 space-y-6 order-first">
+                <div class="bg-gradient-gold rounded-2xl p-5 shadow-lg text-white">
+                    <h3 class="text-base font-semibold mb-3 text-black opacity-80">Latest Achievements</h3>
+                    <ul id="latest-achievements-list-ingame" class="space-y-2 text-sm">
+                        <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3">Loading...</li>
+                    </ul>
                 </div>
-            </div>
-            <div id="message-box"
-                class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50" role="dialog"
-                aria-modal="true">
-                <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-xl text-center max-w-sm w-11/12 font-sans">
-                    <h2 id="message-title" class="text-2xl sm:text-3xl font-bold text-text-primary mb-4"></h2>
-                    <p id="message-text" class="text-md sm:text-lg text-text-secondary mb-6"></p>
-                    <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                        <button id="new-game-btn"
-                            class="bg-success hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">New
-                            Game</button>
-                        <button id="quit-btn"
-                            class="bg-error hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Quit
-                            to Menu</button>
+                <div id="player-rank-card-ingame" class="bg-gradient-blue-purple rounded-2xl p-5 shadow-lg text-white">
+                    <p id="rank-player-name-ingame" class="text-sm font-medium mb-1">Loading Rank...</p>
+                    <p id="rank-position-ingame" class="text-lg font-semibold mb-2 flex items-center"><span
+                            class="text-yellow-400 mr-1.5">🏆</span> Loading...</p>
+                    <p id="rank-points-ingame" class="text-sm font-medium">Loading...</p>
+                </div>
+                <div class="space-y-3">
+                    <button id="quit-to-menu-btn-ingame"
+                        class="w-full bg-card-bg hover:bg-input-bg text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Quit
+                        to menu</button>
+                    <button id="change-category-btn-ingame"
+                        class="w-full bg-card-bg hover:bg-input-bg text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Change
+                        Category</button>
+                </div>
+            </aside>
+
+            <!-- Game Center Area (Board, Keyboard, etc.) -->
+            <div id="game-center-area" class="relative flex-grow flex flex-col items-center pt-4 sm:pt-0">
+                <!-- Game UI (Score, Timer) moved higher for visibility -->
+                <div id="game-ui" class="w-full p-0 md:p-4 mb-4 order-first">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div class="flex items-center gap-2">
+                            <div id="score" class="text-xl sm:text-2xl font-bold" aria-live="polite">Score: 0</div>
+                            <div id="game-user-info" class="text-sm sm:text-base text-text-muted hidden"></div>
+                        </div>
+                        <div id="difficulty-mode"
+                            class="text-lg sm:text-xl order-first md:order-none w-full md:w-auto text-center md:text-left">
+                        </div>
+                        <div id="timer" class="text-lg sm:text-xl text-right" aria-live="polite"></div>
                     </div>
                 </div>
+
+                <!-- Message Box Overlay -->
+                <div id="message-box"
+                    class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50"
+                    role="dialog" aria-modal="true">
+                    <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-xl text-center max-w-sm w-11/12 font-sans">
+                        <h2 id="message-title" class="text-2xl sm:text-3xl font-bold text-text-primary mb-4"></h2>
+                        <p id="message-text" class="text-md sm:text-lg text-text-secondary mb-6"></p>
+                        <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                            <button id="new-game-btn"
+                                class="bg-success hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">New
+                                Game</button>
+                            <button id="quit-btn"
+                                class="bg-error hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Quit
+                                to Menu</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Board -->
+                <div id="game-board" class="flex flex-col space-y-grid-gap my-auto">
+                    <!-- Generated by JS -->
+                </div>
+
+                <!-- Keyboard -->
+                <div id="keyboard" class="w-full max-w-[600px] px-2 mt-auto mb-2">
+                    <!-- Generated by JS -->
+                </div>
+
+                <!-- Removed redundant back button -->
             </div>
-            <div id="game-board" class="flex flex-col space-y-grid-gap my-auto">
-            </div>
-            <div id="keyboard" class="w-full max-w-[600px] px-2 mt-auto mb-2">
-            </div>
-            <button id="back-to-menu-btn" title="Quit Game"
-                class="absolute top-0 right-0 flex items-center justify-center bg-secondary hover:bg-secondary-hover text-white font-bold p-2 rounded-full focus:outline-none focus:shadow-outline transition duration-200 z-10">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                        clip-rule="evenodd" />
-                </svg>
-                <span class="sr-only">Quit Game</span>
-            </button>
+
         </div>
 
     </div>
@@ -561,41 +512,21 @@
 
     <script src="js/game.js"></script>
     <script>
+        // Sidebar Toggle Logic
         const menuToggle = document.getElementById('header-menu-toggle');
         const appSidebar = document.getElementById('app-sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
         const closeSidebarButton = document.getElementById('app-sidebar-close');
 
-        function openSidebar() {
-            if (appSidebar && sidebarOverlay) {
-                appSidebar.classList.remove('-translate-x-full');
-                sidebarOverlay.classList.remove('hidden');
-            }
-        }
-        function closeSidebar() {
-            if (appSidebar && sidebarOverlay) {
-                appSidebar.classList.add('-translate-x-full');
-                sidebarOverlay.classList.add('hidden');
-            }
-        }
+        function openSidebar() { if (appSidebar && sidebarOverlay) { appSidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); } }
+        function closeSidebar() { if (appSidebar && sidebarOverlay) { appSidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); } }
 
         if (menuToggle) { menuToggle.addEventListener('click', openSidebar); }
         if (sidebarOverlay) { sidebarOverlay.addEventListener('click', closeSidebar); }
         if (closeSidebarButton) { closeSidebarButton.addEventListener('click', closeSidebar); }
 
-        // Add listener for sidebar links if they need to close the sidebar
-        document.getElementById('sidebar-show-dashboard')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            showDashboardView(); // Assuming this function exists in game.js
-            closeSidebar();
-        });
-        // Add listeners for other sidebar actions as needed (logout, etc.)
-        document.getElementById('sidebar-logout-button')?.addEventListener('click', () => {
-            const navLogout = document.getElementById('nav-logout-button');
-            if (navLogout) navLogout.click(); // Trigger the main logout button
-            closeSidebar();
-        });
-
+        document.getElementById('sidebar-show-wordle-menu')?.addEventListener('click', (e) => { e.preventDefault(); showWordleMenuView(); closeSidebar(); });
+        document.getElementById('sidebar-logout-button')?.addEventListener('click', () => { const navLogout = document.getElementById('nav-logout-button'); if (navLogout) navLogout.click(); closeSidebar(); });
     </script>
 
 </body>
