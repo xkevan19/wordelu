@@ -1125,6 +1125,7 @@
     }
     if (gameContainer) {
       gameContainer.classList.add("hidden");
+      gameContainer.classList.remove("flex", "flex-col", "lg:flex-row");
     } else {
       console.error("Game container not found!");
     }
@@ -1152,7 +1153,7 @@
     }
     if (gameContainer) {
       gameContainer.classList.remove("hidden");
-      gameContainer.classList.add("flex");
+      gameContainer.classList.add("flex", "flex-col", "lg:flex-row");
     } else {
       console.error("Game container not found!");
     }
