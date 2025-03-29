@@ -171,27 +171,24 @@
     try {
       const response = await fetch("/.netlify/functions/get-supabase-config");
       if (!response.ok)
-        throw new Error(`Failed to fetch Supabase config: ${response.status}`);
+        throw new Error(`Failed Supabase config: ${response.status}`);
       const config = await response.json();
       if (!config.url || !config.key)
-        throw new Error("Invalid Supabase config received");
+        throw new Error("Invalid Supabase config");
       _supabase = supabase.createClient(config.url, config.key);
-
       const {
         data: { session },
         error: sessionError,
       } = await _supabase.auth.getSession();
-      if (sessionError)
-        console.error("Error getting initial session:", sessionError);
+      if (sessionError) console.error("Get session error:", sessionError);
       currentUser = session?.user ?? null;
-
       _supabase.auth.onAuthStateChange(async (_event, session) => {
         const prevUser = currentUser;
         currentUser = session?.user ?? null;
         console.log(
-          "Auth State Changed:",
+          "Auth State Change:",
           _event,
-          " | User:",
+          "| User:",
           currentUser?.email || "Guest"
         );
         if (currentUser && (!prevUser || currentUser.id !== prevUser.id)) {
@@ -200,37 +197,34 @@
         } else if (!currentUser && prevUser) {
           userProfile = null;
           handleGuestState();
-          // If user logs out during a game, return to menu
           if (currentGameInstance) {
             currentGameInstance.resetGameToMenu();
+            showToast("Logged out.");
           }
         }
-        await loadAndDisplayInitialData(); // Refresh data for menu/game column
+        await loadAndDisplayInitialData();
         if (currentGameInstance) {
-          updateGameHeaderUserInfo(); // Update game UI if game is active
+          updateGameHeaderUserInfo();
         } else if (
           !document
             .getElementById("game-container")
             .classList.contains("hidden")
         ) {
-          // If somehow game container is visible without instance, reset
           showWordleMenuView();
         }
         updateSidebarButtonsVisibility();
       });
-
       if (currentUser) {
         await fetchUserProfile(currentUser.id);
         handleLoggedInState();
       } else {
         handleGuestState();
       }
-
       await loadAndDisplayInitialData();
-      showWordleMenuView(); // Show Wordle menu by default
+      showWordleMenuView();
     } catch (error) {
-      console.error("Supabase Initialization Error:", error);
-      showToast(`Error initializing: ${error.message}`);
+      console.error("Supabase Init Error:", error);
+      showToast(`Init Error: ${error.message}`);
       handleGuestState();
       await loadAndDisplayInitialData();
       showWordleMenuView();
@@ -238,75 +232,71 @@
   }
 
   function updateUserStatusHeader() {
-    const userActions = document.getElementById("user-actions");
-    if (!userActions) return;
-    userActions.innerHTML = "";
+    const ua = document.getElementById("user-actions");
+    if (!ua) return;
+    ua.innerHTML = "";
     if (currentUser && userProfile) {
-      const welcomeText = document.createElement("span");
-      welcomeText.className = "text-sm text-text-secondary hidden sm:inline";
-      welcomeText.textContent = `Hi, ${userProfile.username}!`;
-      const accountLink = document.createElement("a");
-      accountLink.href = "account.html";
-      accountLink.className =
+      const wt = document.createElement("span");
+      wt.className = "text-sm text-text-secondary hidden sm:inline";
+      wt.textContent = `Hi, ${userProfile.username}!`;
+      const al = document.createElement("a");
+      al.href = "account.html";
+      al.className =
         "text-sm bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-1 px-3 rounded-md transition duration-200";
-      accountLink.textContent = "Account";
-      const logoutButton = document.createElement("button");
-      logoutButton.id = "nav-logout-button";
-      logoutButton.className =
-        "text-sm bg-primary hover:bg-primary-hover text-white font-semibold py-1 px-3 rounded-md transition duration-200";
-      logoutButton.textContent = "Logout";
-      logoutButton.addEventListener("click", async () => {
+      al.textContent = "Account";
+      const lb = document.createElement("button");
+      lb.id = "nav-logout-button";
+      lb.className =
+        "text-sm bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-md transition duration-200";
+      lb.textContent = "Logout";
+      lb.addEventListener("click", async () => {
         if (!_supabase) return;
-        logoutButton.disabled = true;
-        logoutButton.textContent = "...";
+        lb.disabled = true;
+        lb.textContent = "...";
         const { error } = await _supabase.auth.signOut();
         if (error) {
           showToast(`Logout failed: ${error.message}`);
-          console.error("Logout error:", error);
-          logoutButton.disabled = false;
-          logoutButton.textContent = "Logout";
+          lb.disabled = false;
+          lb.textContent = "Logout";
         } else {
           console.log("Logout initiated...");
         }
       });
-      userActions.appendChild(welcomeText);
-      userActions.appendChild(accountLink);
-      userActions.appendChild(logoutButton);
+      ua.appendChild(wt);
+      ua.appendChild(al);
+      ua.appendChild(lb);
     } else {
-      const guestText = document.createElement("span");
-      guestText.className = "text-sm text-text-muted hidden sm:inline";
-      guestText.textContent = "Playing as Guest";
-      const loginLink = document.createElement("a");
-      loginLink.href = "auth.html";
-      loginLink.className =
+      const gt = document.createElement("span");
+      gt.className = "text-sm text-text-muted hidden sm:inline";
+      gt.textContent = "Playing as Guest";
+      const ll = document.createElement("a");
+      ll.href = "auth.html";
+      ll.className =
         "text-sm bg-primary hover:bg-primary-hover text-white font-semibold py-1 px-3 rounded-md transition duration-200";
-      loginLink.textContent = "Login / Sign Up";
-      userActions.appendChild(guestText);
-      userActions.appendChild(loginLink);
+      ll.textContent = "Login / Sign Up";
+      ua.appendChild(gt);
+      ua.appendChild(ll);
     }
   }
 
   function updateSidebarButtonsVisibility() {
-    const teamButton = document.getElementById("show-team-leaderboard-btn");
-    if (teamButton) {
-      teamButton.classList.toggle(
-        "hidden",
-        !(currentUser && userProfile?.team)
-      );
+    const tb = document.getElementById("show-team-leaderboard-btn");
+    if (tb) {
+      tb.classList.toggle("hidden", !(currentUser && userProfile?.team));
     }
   }
 
   function handleGuestState() {
-    console.log("Handling Guest State UI");
-    const playerNameInput = document.getElementById("player-name");
-    const welcomeMessage = document.getElementById("welcome-message");
-    if (playerNameInput) {
-      playerNameInput.value = localStorage.getItem("wordleGuestName") || "";
-      playerNameInput.disabled = false;
-      playerNameInput.placeholder = "Enter Your Name (Optional)";
+    console.log("Handling Guest State");
+    const pni = document.getElementById("player-name");
+    const wm = document.getElementById("welcome-message");
+    if (pni) {
+      pni.value = localStorage.getItem("wordleGuestName") || "";
+      pni.disabled = false;
+      pni.placeholder = "Enter Your Name (Optional)";
     }
-    if (welcomeMessage) {
-      welcomeMessage.textContent = "Log in to save progress & compete!";
+    if (wm) {
+      wm.textContent = "Log in to save progress & compete!";
     }
     updateUserStatusHeader();
     updateStatisticsDisplayGlobal(null);
@@ -317,26 +307,26 @@
   }
 
   function handleLoggedInState() {
-    console.log("Handling Logged In State UI");
-    const playerNameInput = document.getElementById("player-name");
-    const welcomeMessage = document.getElementById("welcome-message");
-    if (playerNameInput && userProfile?.username) {
-      playerNameInput.value = userProfile.username;
-      playerNameInput.disabled = true;
-    } else if (playerNameInput) {
-      playerNameInput.value = currentUser?.email || "Loading...";
-      playerNameInput.disabled = true;
+    console.log("Handling Logged In State");
+    const pni = document.getElementById("player-name");
+    const wm = document.getElementById("welcome-message");
+    if (pni && userProfile?.username) {
+      pni.value = userProfile.username;
+      pni.disabled = true;
+    } else if (pni) {
+      pni.value = currentUser?.email || "Loading...";
+      pni.disabled = true;
     }
-    if (welcomeMessage && userProfile?.username) {
-      welcomeMessage.textContent = `Ready for a challenge, ${userProfile.username}?`;
-    } else if (welcomeMessage) {
-      welcomeMessage.textContent = `Welcome back!`;
+    if (wm && userProfile?.username) {
+      wm.textContent = `Ready for a challenge, ${userProfile.username}?`;
+    } else if (wm) {
+      wm.textContent = `Welcome back!`;
     }
     updateUserStatusHeader();
   }
 
-  async function fetchUserProfile(userId) {
-    if (!_supabase || !userId) {
+  async function fetchUserProfile(uid) {
+    if (!_supabase || !uid) {
       userProfile = null;
       return;
     }
@@ -344,75 +334,74 @@
       const { data, error, status } = await _supabase
         .from("profiles")
         .select("username, team")
-        .eq("id", userId)
+        .eq("id", uid)
         .single();
       if (error && status !== 406) {
-        console.error("Error fetching user profile:", error);
+        console.error("Fetch profile err:", error);
         userProfile = null;
       } else {
         userProfile = data;
-        console.log("User profile fetched:", userProfile);
       }
-    } catch (error) {
-      console.error("Exception fetching user profile:", error);
+    } catch (e) {
+      console.error("Fetch profile ex:", e);
       userProfile = null;
     }
   }
 
-  function updateRankingSidebar(rankData) {
-    const nameEl = document.getElementById("rank-player-name-ingame");
-    const posEl = document.getElementById("rank-position-ingame");
-    const pointsEl = document.getElementById("rank-points-ingame");
-    if (!nameEl || !posEl || !pointsEl) return;
-    if (rankData) {
-      nameEl.textContent = rankData.name || "Top Player";
-      posEl.innerHTML = `<span class="text-yellow-400 mr-1.5">🏆</span> ranked #${
-        rankData.rank || "?"
+  function updateRankingSidebar(rd) {
+    const ne = document.getElementById("rank-player-name-ingame");
+    const pe = document.getElementById("rank-position-ingame");
+    const pte = document.getElementById("rank-points-ingame");
+    if (!ne || !pe || !pte) return;
+    if (rd) {
+      ne.textContent = rd.name || "Top";
+      pe.innerHTML = `<span class="text-yellow-400 mr-1.5">🏆</span> #${
+        rd.rank || "?"
       }`;
-      pointsEl.textContent = `with ${rankData.points || 0} points`;
+      pte.textContent = `${rd.points || 0} pts`;
     } else {
-      nameEl.textContent = "No Rank Data";
-      posEl.innerHTML = `<span class="text-gray-500 mr-1.5">🏆</span> Not Ranked`;
-      pointsEl.textContent = "Play games to get ranked!";
+      ne.textContent = "N/A";
+      pe.innerHTML = `<span class="text-gray-500 mr-1.5">🏆</span> N/A`;
+      pte.textContent = "N/A";
     }
   }
-  function updateLatestAchievementsSidebar(achievements) {
-    const list = document.getElementById("latest-achievements-list-ingame");
-    if (!list) return;
-    list.innerHTML = "";
-    if (achievements && achievements.length > 0) {
-      achievements.slice(0, 3).forEach((ach) => {
+  function updateLatestAchievementsSidebar(achs) {
+    const l = document.getElementById("latest-achievements-list-ingame");
+    if (!l) return;
+    l.innerHTML = "";
+    if (achs && achs.length > 0) {
+      achs.slice(0, 3).forEach((a) => {
         const li = document.createElement("li");
         li.className = "bg-black bg-opacity-20 rounded-lg p-2 px-3 truncate";
-        li.textContent = typeof ach === "string" ? ach : ach.name;
-        li.title = typeof ach === "string" ? ach : ach.name;
-        list.appendChild(li);
+        li.textContent = typeof a === "string" ? a : a.name;
+        li.title = typeof a === "string" ? a : a.name;
+        l.appendChild(li);
       });
     } else {
-      list.innerHTML =
-        '<li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 text-gray-300 italic">No recent achievements.</li>';
+      l.innerHTML =
+        '<li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 italic">None yet.</li>';
     }
   }
 
-  function showToast(message, duration = CONFIG.TOAST_DURATION) {
-    const container = document.getElementById("toast-container");
-    if (!container) return;
-    const toast = document.createElement("div");
-    toast.className = "toast";
-    toast.textContent = message;
-    container.appendChild(toast);
-    toast.offsetHeight;
-    toast.classList.add("show");
+  function showToast(msg, dur = CONFIG.TOAST_DURATION) {
+    const c = document.getElementById("toast-container");
+    if (!c) return;
+    const t = document.createElement("div");
+    t.className = "toast";
+    t.textContent = msg;
+    c.appendChild(t);
+    t.offsetHeight;
+    t.classList.add("show");
     setTimeout(() => {
-      toast.classList.remove("show");
-      toast.addEventListener(
+      t.classList.remove("show");
+      t.addEventListener(
         "transitionend",
         () => {
-          if (toast.parentNode === container) container.removeChild(toast);
+          if (t.parentNode === c) c.removeChild(t);
         },
         { once: true }
       );
-    }, duration);
+    }, dur);
   }
 
   class WordleGame {
@@ -431,7 +420,6 @@
       this.timeLeft =
         this.difficulty === "hard" ? CONFIG.HARD_MODE_DURATION : null;
       this.timerInterval = null;
-      this.letterCubes = [];
       this.currentRow = 0;
       this.currentCol = 0;
       this.targetWord = this.selectRandomWord();
@@ -457,6 +445,8 @@
       this.boundHandleKeyDown = this.handleKeyDown.bind(this);
       this.boundHandleModalKeyDown = this.handleModalKeyDown.bind(this);
       this.gameContainer = document.getElementById("game-container");
+      this.gameCenterArea = document.getElementById("game-center-area");
+      this.rightInfoArea = document.getElementById("in-game-right-info");
       this.toastContainer = document.getElementById("toast-container");
       this.initGameData()
         .then(() => {
@@ -473,21 +463,20 @@
           loadAndDisplayInitialData();
         })
         .catch((error) => {
-          console.error("Error initializing game data:", error);
-          showToast("Error loading game data.");
+          console.error("Init game data err:", error);
+          showToast("Error loading data.");
           this.createGameBoard();
           this.createKeyboard();
           this.setupEventListeners();
           this.updateDifficultyDisplay();
           this.updateGameHeaderUserInfo();
         });
-      const quitBtn = this.gameContainer.querySelector("#quit-btn");
-      if (quitBtn) {
-        const newQuitBtn = quitBtn.cloneNode(true);
-        quitBtn.parentNode.replaceChild(newQuitBtn, quitBtn);
-        newQuitBtn.addEventListener("click", () => this.resetGameToMenu());
+      const qb = this.gameContainer.querySelector("#quit-btn");
+      if (qb) {
+        const nqb = qb.cloneNode(true);
+        qb.parentNode.replaceChild(nqb, qb);
+        nqb.addEventListener("click", () => this.resetGameToMenu());
       }
-      // Add listeners for the left column buttons inside game container
       document
         .getElementById("quit-to-menu-btn-ingame")
         ?.addEventListener("click", () => this.resetGameToMenu());
@@ -496,64 +485,51 @@
         ?.addEventListener("click", () => this.resetGameToMenu());
     }
     updateGameHeaderUserInfo() {
-      const gameUserInfoEl =
-        this.gameContainer?.querySelector("#game-user-info");
-      if (gameUserInfoEl) {
+      const gui = this.rightInfoArea?.querySelector("#game-user-info");
+      if (gui) {
         if (this.userId && this.userProfileData) {
           let t =
             this.userProfileData.team === "red"
-              ? '<span class="text-red-400">(Red)</span>'
+              ? "(Red)"
               : this.userProfileData.team === "blue"
-              ? '<span class="text-blue-400">(Blue)</span>'
+              ? "(Blue)"
               : "";
-          gameUserInfoEl.innerHTML = `Playing as ${this.userProfileData.username} ${t}`;
-          gameUserInfoEl.classList.remove("hidden");
+          gui.textContent = `${this.userProfileData.username} ${t}`.trim();
+          gui.title = gui.textContent;
         } else {
-          gameUserInfoEl.textContent = `Playing as ${this.playerName}`;
-          gameUserInfoEl.classList.remove("hidden");
+          gui.textContent = this.playerName;
+          gui.title = this.playerName;
         }
       }
     }
     async initGameData() {
       if (this.userId && _supabase) {
         try {
-          const [stats, achievementsData] = await Promise.all([
+          const [s, a] = await Promise.all([
             this.fetchSupabaseStats(),
             this.fetchSupabaseAchievements(),
           ]);
-          this.playerStats = stats;
-          this.achievements = achievementsData;
-        } catch (error) {
-          console.error("Failed Supabase data fetch:", error);
-          showToast("Could not load profile.");
-          this.playerStats = {
-            totalGamesPlayed: 0,
-            totalWins: 0,
-            categoriesWon: new Set(),
-            hardModeWins: 0,
-            totalScore: 0,
-          };
+          this.playerStats = s;
+          this.achievements = a;
+        } catch (e) {
+          console.error("Fetch Supa data err:", e);
+          showToast("Couldn't load profile.");
+          this.playerStats = { tGP: 0, tW: 0, cW: new Set(), hMW: 0, tS: 0 };
           this.achievements = {};
         }
       } else {
-        this.playerStats = {
-          totalGamesPlayed: 0,
-          totalWins: 0,
-          categoriesWon: new Set(),
-          hardModeWins: 0,
-          totalScore: 0,
-        };
+        this.playerStats = { tGP: 0, tW: 0, cW: new Set(), hMW: 0, tS: 0 };
         this.achievements = {};
       }
       updateStatisticsDisplayGlobal(this.userId ? this.playerStats : null);
       updateAchievementsDisplayGlobal(this.userId ? this.achievements : null);
-    } // Removed redundant loadAndDisplayInitialData call from constructor
+    }
     selectRandomWord() {
       const w = WORDS[this.category] || WORDS.general;
       return w[Math.floor(Math.random() * w.length)].toUpperCase();
     }
     createGameBoard() {
-      const gb = this.gameContainer?.querySelector("#game-board");
+      const gb = this.gameCenterArea?.querySelector("#game-board");
       if (!gb) return;
       gb.innerHTML = "";
       const f = document.createDocumentFragment();
@@ -577,7 +553,7 @@
         ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
         ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "⌫"],
       ];
-      const k = this.gameContainer?.querySelector("#keyboard");
+      const k = this.gameCenterArea?.querySelector("#keyboard");
       if (!k) return;
       k.innerHTML = "";
       const f = document.createDocumentFragment();
@@ -600,7 +576,7 @@
       k.appendChild(f);
     }
     setupEventListeners() {
-      const ke = this.gameContainer?.querySelector("#keyboard");
+      const ke = this.gameCenterArea?.querySelector("#keyboard");
       if (!ke) return;
       if (ke.listener) ke.removeEventListener("click", ke.listener);
       ke.listener = (e) => {
@@ -743,7 +719,7 @@
       }
     }
     updateKeyboardColors(g, res) {
-      const kd = this.gameContainer?.querySelector("#keyboard");
+      const kd = this.gameCenterArea?.querySelector("#keyboard");
       if (!kd) return;
       for (let i = 0; i < g.length; i++) {
         const l = g[i];
@@ -802,7 +778,7 @@
           await Promise.all(uA.map((a) => this.unlockSupabaseAchievement(a)));
           await loadAndDisplayInitialData();
         } catch (err) {
-          console.error("Error saving win:", err);
+          console.error("Save win err:", err);
           showToast("Error saving results.");
         }
         this.showMessage("Congratulations!", msg);
@@ -811,7 +787,7 @@
         await loadAndDisplayInitialData();
         updateStatisticsDisplayGlobal(null);
         updateAchievementsDisplayGlobal(null);
-        let msg = `🎉 You guessed it: ${this.targetWord}! Score: ${cgs}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save scores!`;
+        let msg = `🎉 You guessed it: ${this.targetWord}! Score: ${cgs}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save!`;
         this.showMessage("You Won!", msg, true);
       }
       this.playSound("win");
@@ -826,30 +802,24 @@
           await this.updateSupabaseStats();
           await loadAndDisplayInitialData();
         } catch (err) {
-          console.error("Failed stat update:", err);
+          console.error("Stat update err:", err);
           showToast("Error saving stats.");
         }
         updateStatisticsDisplayGlobal(this.playerStats);
         updateAchievementsDisplayGlobal(this.achievements);
-        let msg = `😥 The word was: ${this.targetWord}. Better luck next time! Score remains ${this.playerStats.totalScore}.`;
+        let msg = `😥 Word was: ${this.targetWord}. Score remains ${this.playerStats.totalScore}.`;
         this.showMessage("Game Over", msg);
       } else {
         updateStatisticsDisplayGlobal(null);
         updateAchievementsDisplayGlobal(null);
         await loadAndDisplayInitialData();
-        let msg = `😥 The word was: ${this.targetWord}. Score: ${this.score}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save scores!`;
+        let msg = `😥 Word was: ${this.targetWord}. Score: ${this.score}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save!`;
         this.showMessage("Game Over", msg, true);
       }
       this.playSound("lose");
     }
     async fetchSupabaseStats() {
-      const dS = {
-        totalGamesPlayed: 0,
-        totalWins: 0,
-        categoriesWon: new Set(),
-        hardModeWins: 0,
-        totalScore: 0,
-      };
+      const dS = { tGP: 0, tW: 0, cW: new Set(), hMW: 0, tS: 0 };
       if (!this.userId || !_supabase) return dS;
       try {
         const { data, error, status } = await _supabase
@@ -869,9 +839,9 @@
               totalScore: data.total_score || 0,
             }
           : dS;
-      } catch (err) {
-        console.error("Fetch Stats Err:", err);
-        throw err;
+      } catch (e) {
+        console.error("Fetch Stats Err:", e);
+        throw e;
       }
     }
     async updateSupabaseStats() {
@@ -895,9 +865,9 @@
           console.error("RPC Err:", error);
           throw error;
         } else console.log("Stats updated via RPC.");
-      } catch (rpcErr) {
-        console.error("RPC Call Err:", rpcErr);
-        throw rpcErr;
+      } catch (e) {
+        console.error("RPC Call Err:", e);
+        throw e;
       }
     }
     async fetchSupabaseAchievements() {
@@ -918,8 +888,8 @@
             aM[a.achievement_id] = true;
           });
         return aM;
-      } catch (err) {
-        console.error("Fetch Ach Ex:", err);
+      } catch (e) {
+        console.error("Fetch Ach Ex:", e);
         return dA;
       }
     }
@@ -1002,31 +972,29 @@
       return nU;
     }
     updateTimerDisplay() {
-      const t = document.getElementById("timer");
+      const t = this.rightInfoArea?.querySelector("#timer");
       if (!t) return;
       if (this.difficulty === "hard" && this.timeLeft !== null) {
-        t.textContent = `Time: ${this.timeLeft}s`;
+        t.textContent = `${this.timeLeft}s`;
         t.classList.toggle(
           "text-red-500",
           this.timeLeft <= 10 && this.timeLeft > 0
         );
         t.classList.toggle("text-text-secondary", this.timeLeft > 10);
-      } else t.textContent = "";
+      } else t.textContent = "-";
     }
     updateDifficultyDisplay() {
-      const d = this.gameContainer?.querySelector("#difficulty-mode");
+      const d = this.rightInfoArea?.querySelector("#difficulty-mode");
       if (d) {
         d.textContent = this.difficulty === "easy" ? `Easy Mode` : `Hard Mode`;
-        d.className = `text-lg sm:text-xl order-first md:order-none w-full md:w-auto text-center md:text-left ${
-          this.difficulty === "hard"
-            ? "text-red-400 font-semibold"
-            : "text-green-400"
+        d.className = `text-base font-medium ${
+          this.difficulty === "hard" ? "text-red-400" : "text-green-400"
         }`;
       }
     }
     updateScoreDisplay() {
-      const s = this.gameContainer?.querySelector("#score");
-      if (s) s.textContent = `Score: ${this.score}`;
+      const s = this.rightInfoArea?.querySelector("#score");
+      if (s) s.textContent = this.score;
     }
     showMessage(t, txt, html = false) {
       const mb = document.getElementById("message-box");
@@ -1097,7 +1065,7 @@
       const mb = document.getElementById("message-box");
       if (mb) mb.classList.add("hidden");
       loadAndDisplayInitialData();
-    } // Reload sidebar data on restart
+    }
     resetGameState() {
       clearInterval(this.timerInterval);
       this.currentRow = 0;
@@ -1122,7 +1090,7 @@
     destroy() {
       clearInterval(this.timerInterval);
       document.removeEventListener("keydown", this.boundHandleKeyDown);
-      const ke = this.gameContainer?.querySelector("#keyboard");
+      const ke = this.gameCenterArea?.querySelector("#keyboard");
       if (ke && ke.listener) {
         ke.removeEventListener("click", ke.listener);
         delete ke.listener;
@@ -1144,9 +1112,8 @@
     }
   }
 
-  // View Switching Functions
   function showWordleMenuView() {
-    console.log("Showing Wordle Menu View");
+    console.log("Showing Wordle Menu");
     document.getElementById("menu-container")?.classList.remove("hidden");
     document.getElementById("game-container")?.classList.add("hidden");
     document
@@ -1157,7 +1124,7 @@
     document
       .getElementById("menu-buttons-container")
       ?.classList.remove("hidden");
-  } // Ensure main menu parts are shown
+  }
   function showGameView() {
     console.log("Showing Game View");
     document.getElementById("menu-container")?.classList.add("hidden");
@@ -1197,7 +1164,6 @@
       ?.classList.remove("hidden");
   }
 
-  // Event Listeners (Wordle Menu)
   document
     .getElementById("show-leaderboard-btn")
     ?.addEventListener("click", () => showSection("leaderboard-section"));
@@ -1218,7 +1184,7 @@
     ?.addEventListener("click", showMenuFromSections);
 
   async function loadAndDisplayInitialData() {
-    let topPlayerData = null;
+    let tpD = null;
     if (_supabase) {
       try {
         const { data, error } = await _supabase
@@ -1229,18 +1195,18 @@
           .maybeSingle();
         if (error) throw error;
         if (data) {
-          topPlayerData = {
+          tpD = {
             rank: 1,
-            name: data.profile?.username || "Top Player",
+            name: data.profile?.username || "Top",
             points: data.total_score || 0,
           };
         }
-      } catch (error) {
-        console.error("Error fetching top player:", error);
+      } catch (e) {
+        console.error("Fetch top player err:", e);
       }
     }
-    updateRankingSidebar(topPlayerData);
-    let latestAchievementsData = null;
+    updateRankingSidebar(tpD);
+    let lAD = null;
     if (currentUser && _supabase) {
       try {
         const { data, error } = await _supabase
@@ -1252,29 +1218,27 @@
         if (error && error.code !== "42703") {
           throw error;
         } else if (error && error.code === "42703") {
-          console.warn(
-            "`inserted_at` column not found on achievements. Cannot sort by latest."
-          );
-          const { data: allData, error: allError } = await _supabase
+          console.warn("`inserted_at` missing? Fetching w/o order.");
+          const { data: aD, error: aE } = await _supabase
             .from("achievements")
             .select("achievement_id")
             .eq("user_id", currentUser.id)
             .limit(3);
-          if (allError) throw allError;
-          if (allData)
-            latestAchievementsData = allData.map(
+          if (aE) throw aE;
+          if (aD)
+            lAD = aD.map(
               (a) => ACHIEVEMENTS[a.achievement_id]?.name || a.achievement_id
             );
         } else if (data) {
-          latestAchievementsData = data.map(
+          lAD = data.map(
             (a) => ACHIEVEMENTS[a.achievement_id]?.name || a.achievement_id
           );
         }
-      } catch (error) {
-        console.error("Error fetching latest achievements:", error);
+      } catch (e) {
+        console.error("Fetch latest ach err:", e);
       }
     }
-    updateLatestAchievementsSidebar(latestAchievementsData);
+    updateLatestAchievementsSidebar(lAD);
     await Promise.all([
       loadAndDisplayLeaderboard(),
       loadAndDisplayStatistics(),
@@ -1284,11 +1248,10 @@
     updateSidebarButtonsVisibility();
   }
 
-  // Load/Update Functions (Keep existing bodies, ensure they target correct elements)
   async function loadAndDisplayLeaderboard() {
     const lb = document.getElementById("leaderboard-body");
     if (!lb) return;
-    lb.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-text-muted">Loading...</td></tr>`;
+    lb.innerHTML = `<tr><td colspan="4" class="tc t-t-m p-4">Loading...</td></tr>`;
     let ld = [];
     let iL = false;
     try {
@@ -1314,10 +1277,10 @@
         ld = JSON.parse(localStorage.getItem("wordleLeaderboard") || "[]");
         iL = true;
         updateLeaderboardDisplayGlobal(ld, iL);
-        if (currentUser) showToast("Online ldrbrd failed. Showing local.");
+        if (currentUser) showToast("Online failed. Showing local.");
       } catch (le) {
         console.error("Lcl Ldrbrd Err:", le);
-        lb.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-error">Failed load.</td></tr>`;
+        lb.innerHTML = `<tr><td colspan="4" class="tc t-e p-4">Failed load.</td></tr>`;
       }
     }
   }
@@ -1328,25 +1291,24 @@
     const f = document.createDocumentFragment();
     if (!ld || ld.length === 0) {
       const r = document.createElement("tr");
-      r.innerHTML = `<td colspan="4" class="px-4 py-4 text-center text-text-muted">No scores! ${
-        iL ? "(Guests)" : "Play!"
+      r.innerHTML = `<td colspan="4" class="tc t-t-m p-4">No scores! ${
+        iL ? "(G)" : "Play!"
       }</td>`;
       f.appendChild(r);
     } else {
       ld.forEach((e, i) => {
-        const dN = iL ? e.name || "Guest" : e.profile?.username || "?";
+        const dN = iL ? e.name || "G" : e.profile?.username || "?";
         const s = iL ? e.score : e.total_score;
         const t = iL ? "N/A" : e.profile?.team || "N/A";
-        const iGE = iL;
         const r = document.createElement("tr");
         r.className = i % 2 === 0 ? "bg-input-bg/50" : "";
-        r.innerHTML = `<td class="px-4 py-2 text-center">${
+        r.innerHTML = `<td class="px-4 py-2 tc">${
           i + 1
         }</td><td class="px-4 py-2">${dN}${
-          iGE ? " (G)" : ""
-        }</td><td class="px-4 py-2 text-center">${
+          iL ? "(G)" : ""
+        }</td><td class="px-4 py-2 tc">${
           s || 0
-        }</td><td class="px-4 py-2 cap text-center">${t}</td>`;
+        }</td><td class="px-4 py-2 cap tc">${t}</td>`;
         f.appendChild(r);
       });
     }
@@ -1363,17 +1325,12 @@
         if (error && status !== 406) throw error;
         const sD = data
           ? {
-              totalGamesPlayed: data.total_games_played || 0,
-              totalWins: data.total_wins || 0,
-              hardModeWins: data.hard_mode_wins || 0,
-              categoriesWon: new Set(data.categories_won || []),
+              tGP: data.total_games_played || 0,
+              tW: data.total_wins || 0,
+              hMW: data.hard_mode_wins || 0,
+              cW: new Set(data.categories_won || []),
             }
-          : {
-              totalGamesPlayed: 0,
-              totalWins: 0,
-              categoriesWon: new Set(),
-              hardModeWins: 0,
-            };
+          : { tGP: 0, tW: 0, cW: new Set(), hMW: 0 };
         updateStatisticsDisplayGlobal(sD);
       } catch (e) {
         console.error("Stats Load Err:", e);
@@ -1392,22 +1349,15 @@
     if (currentUser && s && dl) {
       dl.classList.remove("hidden");
       if (gm) gm.classList.add("hidden");
-      const dS = {
-        totalGamesPlayed: 0,
-        totalWins: 0,
-        categoriesWon: new Set(),
-        hardModeWins: 0,
-      };
+      const dS = { tGP: 0, tW: 0, cW: new Set(), hMW: 0 };
       const pS = { ...dS, ...s };
-      if (!(pS.categoriesWon instanceof Set))
-        pS.categoriesWon = new Set(pS.categoriesWon || []);
-      document.getElementById("games-played").textContent = pS.totalGamesPlayed;
-      document.getElementById("total-wins").textContent = pS.totalWins;
-      document.getElementById("hard-mode-wins").textContent =
-        pS.hardModeWins || 0;
+      if (!(pS.cW instanceof Set)) pS.cW = new Set(pS.cW || []);
+      document.getElementById("games-played").textContent = pS.tGP;
+      document.getElementById("total-wins").textContent = pS.tW;
+      document.getElementById("hard-mode-wins").textContent = pS.hMW || 0;
       const cWE = document.getElementById("categories-won");
       if (cWE) {
-        const cA = Array.from(pS.categoriesWon);
+        const cA = Array.from(pS.cW);
         const cT =
           cA.length > 0
             ? cA.map((c) => c[0].toUpperCase() + c.slice(1)).join(", ")
@@ -1516,11 +1466,7 @@
       const ts = { blue: 0, red: 0 };
       if (data) {
         data.forEach((i) => {
-          if (
-            i.profile &&
-            i.profile.team &&
-            ts.hasOwnProperty(i.profile.team)
-          ) {
+          if (i.profile?.team && ts.hasOwnProperty(i.profile.team)) {
             ts[i.profile.team] += i.total_score || 0;
           }
         });
@@ -1539,18 +1485,16 @@
       let rs = "t-t-p";
       if (ts.blue > ts.red) bs = "text-blue-400 font-bold";
       else if (ts.red > ts.blue) rs = "text-red-400 font-bold";
-      tb.innerHTML = `<tr class="border-b b-b-c"><td class="px-4 py-3 font-semibold ${bs}">Blue Team</td><td class="px-4 py-3 tc ${bs}">${ts.blue}</td></tr><tr><td class="px-4 py-3 font-semibold ${rs}">Red Team</td><td class="px-4 py-3 tc ${rs}">${ts.red}</td></tr>`;
+      tb.innerHTML = `<tr class="border-b b-b-c"><td class="px-4 py-3 font-semibold ${bs}">Blue</td><td class="px-4 py-3 tc ${bs}">${ts.blue}</td></tr><tr><td class="px-4 py-3 font-semibold ${rs}">Red</td><td class="px-4 py-3 tc ${rs}">${ts.red}</td></tr>`;
     } else if (currentUser && ts === undefined) {
       tb.innerHTML =
         '<tr><td colspan=2 class="tc t-e py-4">Err load scores.</td></tr>';
     } else {
       tb.innerHTML =
-        '<tr><td colspan=2 class="tc t-t-m py-4"><a href="auth.html" class="t-p h:u">Log in</a> to see scores</td></tr>';
+        '<tr><td colspan=2 class="tc t-t-m py-4"><a href="auth.html" class="t-p h:u">Log in</a></td></tr>';
     }
   }
-  // --- End Load/Update Functions ---
 
-  // Start Game Button (from Wordle Menu)
   document.getElementById("start-game-btn")?.addEventListener("click", () => {
     if (currentGameInstance) {
       currentGameInstance.destroy();
@@ -1583,4 +1527,5 @@
   document.addEventListener("DOMContentLoaded", () => {
     initializeSupabase();
   });
+  window.showWordleMenuView = showWordleMenuView;
 })();
