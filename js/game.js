@@ -221,7 +221,9 @@
         handleGuestState();
       }
       await loadAndDisplayInitialData();
-      showWordleMenuView();
+      if (!currentGameInstance) {
+        showWordleMenuView();
+      }
     } catch (error) {
       console.error("Supabase Init Error:", error);
       showToast(`Init Error: ${error.message}`);
@@ -1113,9 +1115,19 @@
   }
 
   function showWordleMenuView() {
-    console.log("Showing Wordle Menu");
-    document.getElementById("menu-container")?.classList.remove("hidden");
-    document.getElementById("game-container")?.classList.add("hidden");
+    console.log("Showing Wordle Menu View");
+    const menuContainer = document.getElementById("menu-container");
+    const gameContainer = document.getElementById("game-container");
+    if (menuContainer) {
+      menuContainer.classList.remove("hidden");
+    } else {
+      console.error("Menu container not found!");
+    }
+    if (gameContainer) {
+      gameContainer.classList.add("hidden");
+    } else {
+      console.error("Game container not found!");
+    }
     document
       .getElementById("sections-display-area")
       ?.classList.remove("hidden");
@@ -1124,12 +1136,28 @@
     document
       .getElementById("menu-buttons-container")
       ?.classList.remove("hidden");
+    document
+      .getElementById("back-to-menu-from-sections-btn")
+      ?.classList.add("hidden");
   }
+
   function showGameView() {
     console.log("Showing Game View");
-    document.getElementById("menu-container")?.classList.add("hidden");
-    document.getElementById("game-container")?.classList.remove("hidden");
+    const menuContainer = document.getElementById("menu-container");
+    const gameContainer = document.getElementById("game-container");
+    if (menuContainer) {
+      menuContainer.classList.add("hidden");
+    } else {
+      console.error("Menu container not found!");
+    }
+    if (gameContainer) {
+      gameContainer.classList.remove("hidden");
+      gameContainer.classList.add("flex");
+    } else {
+      console.error("Game container not found!");
+    }
   }
+
   function hideAllSections() {
     const sa = document.getElementById("sections-display-area");
     if (sa) {
@@ -1140,28 +1168,27 @@
       });
     }
   }
+
   function showSection(sId) {
     showWordleMenuView();
-    hideAllSections();
-    const sTS = document.getElementById(sId);
-    const bB = document.getElementById("back-to-menu-from-sections-btn");
-    if (sTS) sTS.classList.remove("hidden");
-    if (bB) bB.classList.remove("hidden");
     document.getElementById("main-menu-input-card")?.classList.add("hidden");
     document.getElementById("menu-buttons-container")?.classList.add("hidden");
+    hideAllSections();
+    const sectionToShow = document.getElementById(sId);
+    const backButton = document.getElementById(
+      "back-to-menu-from-sections-btn"
+    );
+    if (sectionToShow) sectionToShow.classList.remove("hidden");
+    if (backButton) backButton.classList.remove("hidden");
     if (sId === "leaderboard-section") loadAndDisplayLeaderboard();
     else if (sId === "statistics-section") loadAndDisplayStatistics();
     else if (sId === "achievements-section") loadAndDisplayAchievements();
     else if (sId === "team-leaderboard-section")
       loadAndDisplayTeamLeaderboard();
   }
+
   function showMenuFromSections() {
     showWordleMenuView();
-    hideAllSections();
-    document.getElementById("main-menu-input-card")?.classList.remove("hidden");
-    document
-      .getElementById("menu-buttons-container")
-      ?.classList.remove("hidden");
   }
 
   document
