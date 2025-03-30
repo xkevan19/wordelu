@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordelu</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Galindo&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/howler@2.2.3/dist/howler.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 'dark-background': '#121213', 'card-bg': '#1A1A1B', 'input-bg': '#27272A', 'border-color': '#3A3A3C', 'key-bg': '#333333', 'key-hover': '#444444', 'primary': '#6366F1', 'primary-hover': '#4F46E5', 'secondary': '#4B5563', 'secondary-hover': '#374151', 'correct': '#538D4E', 'present': '#B59F3B', 'absent': '#3A3A3C', 'text-primary': '#FFFFFF', 'text-secondary': '#D1D5DB', 'text-muted': '#9CA3AF', 'error': '#EF4444', 'success': '#10B981', 'overlay-gradient-start': '#6366F1', 'overlay-gradient-end': '#8B5CF6', 'gradient-gold-start': '#D4AF37', 'gradient-gold-end': '#B8860B', 'gradient-blue-start': '#4F46E5', 'gradient-blue-end': '#7C3AED', },
+                    fontFamily: { 'galindo': ['Galindo', 'cursive'], 'sans': ['Inter', 'sans-serif'] },
+                    spacing: { 'grid-gap': '0.5rem', 'key-gap': '0.3rem', 'key-width': '2.8rem', 'enter-width': '4.5rem', 'key-height': '3.5rem', 'cell-size': '3.5rem', },
+                    boxShadow: { 'input-focus': '0 0 0 2px #6366F1', 'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', 'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', },
+                    borderRadius: { 'xl': '0.75rem', '2xl': '1rem', },
+                    zIndex: { '40': '40', '50': '50', '55': '55', '60': '60', '70': '70', '100': '100' },
+                    padding: { '16': '4rem', '20': '5rem', '24': '6rem' }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles/game.css">
+    <style>
+        .bg-gradient-gold {
+            background-image: linear-gradient(to bottom right, #ae8625, #f7ef8a, #d2ac47, #edc967);
+        }
+
+        .bg-gradient-blue-purple {
+            background-image: linear-gradient(to bottom, #1e40af, #3b0764);
+        }
+
+        #header-dropdown-menu button {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+        }
+
+        #header-dropdown-menu button:hover {
+            background-color: #27272A;
+        }
+
+        #header-dropdown-menu button svg {
+            margin-right: 0.75rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            opacity: 0.7;
+        }
+
+        #in-game-left-column,
+        #in-game-right-info {
+            display: none;
+        }
+
+        #mobile-game-info-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(26, 26, 27, 0.95);
+            color: white;
+            padding: 0.5rem 1rem;
+            position: sticky;
+            top: 64px;
+            width: 100%;
+            z-index: 55;
+            border-bottom: 1px solid #3A3A3C;
+        }
+
+        #mobile-game-info-banner>div:not(.mobile-action-buttons) {
+            flex: 1;
+            text-align: center;
+            padding: 0 0.25rem;
+        }
+
+        #mobile-game-info-banner p {
+            margin: 0;
+            font-size: 0.75rem;
+            line-height: 1.2;
+        }
+
+        #mobile-game-info-banner .mobile-action-buttons {
+            flex: 0 0 auto;
+            display: flex;
+            gap: 0.5rem;
+            margin-left: 0.5rem;
+        }
+
+        #mobile-game-info-banner .mobile-action-buttons button {
+            background-color: #4B5563;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            line-height: 1;
+            white-space: nowrap;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        #mobile-game-info-banner .mobile-action-buttons button:hover {
+            background-color: #374151;
+        }
+
+        @media (min-width: 1024px) {
+            #mobile-game-info-banner {
+                display: none;
+            }
+
+            #in-game-left-column,
+            #in-game-right-info {
+                display: block;
+            }
+
+            #game-center-area {
+                margin-top: 0;
+            }
+        }
+
+        @media (max-width: 1023px) {
+            #game-center-area {
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-dark-background text-text-secondary font-sans">
+
+    <nav class="bg-card-bg p-4 shadow-md sticky top-0 z-60">
+        <div class="container mx-auto flex justify-between items-center relative">
+            <div class="flex items-center space-x-3">
+                <button id="header-menu-toggle"
+                    class="text-text-primary hover:text-primary focus:outline-none p-2 rounded-full hover:bg-input-bg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                </button>
+                <a href="index.html" class="text-2xl font-galindo text-primary">Wordelu</a>
+            </div>
+            <div id="user-actions" class="flex items-center space-x-4">
+            </div>
+            <div id="header-dropdown-menu"
+                class="hidden absolute top-full left-0 mt-2 w-56 bg-card-bg rounded-lg shadow-xl p-2 z-50">
+                <button id="dropdown-achievements-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Achievements
+                </button>
+                <button id="dropdown-statistics-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Statistics
+                </button>
+                <button id="dropdown-leaderboard-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                        <path fill-rule="evenodd"
+                            d="M4 5a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 011-1h6a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H7z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Leaderboard
+                </button>
+                <button id="dropdown-quit-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Quit to Menu
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <div id="menu-container" class="">
+            <div class="w-full max-w-lg text-center mb-6 mx-auto">
+                <h1 class="text-5xl sm:text-6xl font-galindo text-text-primary mb-3 tracking-tight">Wordelu
+                </h1>
+                <p id="welcome-message" class="text-lg text-text-muted font-sans">Test your vocabulary!</p>
+            </div>
+            <div id="main-menu-input-card"
+                class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-card w-full max-w-md mb-6 mx-auto">
+                <div class="mb-5">
+                    <label id="player-name-label" for="player-name"
+                        class="block text-sm font-medium text-text-secondary mb-2 font-sans">Your Name</label>
+                    <input type="text" id="player-name" placeholder="Enter Your Name (Optional)"
+                        class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight placeholder-text-muted focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
+                    <div id="logged-in-info"
+                        class="hidden text-text-secondary text-center py-3 px-4 bg-input-bg border border-transparent rounded-lg">
+                    </div>
+                </div>
+                <div class="mb-5">
+                    <label for="difficulty"
+                        class="block text-sm font-medium text-text-secondary mb-2 font-sans">Difficulty</label>
+                    <div class="relative">
+                        <select id="difficulty"
+                            class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
+                            <option value="easy">Easy</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted select-arrow">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label for="category"
+                        class="block text-sm font-medium text-text-secondary mb-2 font-sans">Category</label>
+                    <div class="relative">
+                        <select id="category"
+                            class="appearance-none border border-border-color rounded-lg w-full py-3 px-4 bg-input-bg text-text-primary leading-tight focus:outline-none focus:border-primary focus:shadow-input-focus font-sans">
+                            <option value="general">General</option>
+                            <option value="animals">Animals</option>
+                            <option value="fruits">Fruits</option>
+                            <option value="sports">Sports</option>
+                            <option value="colours">Colours</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="tech">Tech</option>
+                            <option value="science">Science</option>
+                        </select>
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted select-arrow">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="menu-buttons-container" class="w-full max-w-md mb-6 text-center mx-auto">
+                <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
+                    <button id="show-instructions-btn"
+                        class="flex items-center bg-secondary hover:bg-secondary-hover text-text-primary font-semibold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
+                        How to Play </button>
+                </div>
+                <button id="start-game-btn"
+                    class="bg-primary hover:bg-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-200 ease-in-out font-sans">
+                    Start Game </button>
+            </div>
+            <div id="sections-display-area" class="w-full max-w-3xl mt-2 mb-6 mx-auto">
+                <div id="leaderboard-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Leaderboard</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-text-secondary">
+                            <thead class="text-xs text-text-muted uppercase bg-input-bg">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Rank</th>
+                                    <th scope="col" class="px-4 py-3">Name</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Score</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Team</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body" class="divide-y divide-border-color">
+                                <tr>
+                                    <td colspan="4" class="px-4 py-4 text-center text-text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="team-leaderboard-section"
+                    class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Team Standings</h2>
+                    <div class="overflow-x-auto max-w-sm mx-auto">
+                        <table class="w-full text-lg text-left text-text-secondary">
+                            <thead class="text-base text-text-muted uppercase bg-input-bg">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Team</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Total Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="team-leaderboard-body" class="divide-y divide-border-color">
+                                <tr>
+                                    <td colspan="2" class="text-center text-text-muted py-4">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="statistics-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Player Statistics</h2>
+                    <p id="stats-guest-message" class="text-center text-text-muted py-4 hidden"><a href="auth.html"
+                            class="text-primary hover:underline">Log in</a> to track.</p>
+                    <dl class="space-y-4 text-lg hidden">
+                        <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
+                            <dt class="flex items-center font-medium text-text-secondary"><svg
+                                    xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-primary" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                                </svg>Games Played:</dt>
+                            <dd id="games-played" class="font-semibold text-text-primary text-xl">0</dd>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
+                            <dt class="flex items-center font-medium text-text-secondary"><svg
+                                    xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-success"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd" />
+                                </svg>Total Wins:</dt>
+                            <dd id="total-wins" class="font-semibold text-text-primary text-xl">0</dd>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
+                            <dt class="flex items-center font-medium text-text-secondary"><svg
+                                    xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-present" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>Categories Won:</dt>
+                            <dd id="categories-won"
+                                class="font-semibold text-text-primary text-base sm:text-xl truncate max-w-[40%] sm:max-w-[50%]">
+                                None</dd>
+                        </div>
+                        <div class="flex items-center justify-between p-4 bg-input-bg rounded-lg">
+                            <dt class="flex items-center font-medium text-text-secondary"><svg
+                                    xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-error" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9.879 16.121A3 3 0 1012.014 13L9.879 16.121z" />
+                                </svg>Hard Mode Wins:</dt>
+                            <dd id="hard-mode-wins" class="font-semibold text-text-primary text-xl">0</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div id="achievements-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Achievements</h2>
+                    <p id="achievements-guest-message" class="text-center text-text-muted py-4 hidden"><a
+                            href="auth.html" class="text-primary hover:underline">Log in</a> to track.</p>
+                    <div id="achievements-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <p class="text-text-muted col-span-full text-center">Loading...</p>
+                    </div>
+                </div>
+                <div id="instructions-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">How to Play & Score</h2>
+                    <div class="space-y-6 text-text-secondary">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">1. Getting Started</h3>
+                            <div class="ml-4 space-y-2">
+                                <div><strong class="font-medium">Name:</strong> Set in menu (if guest).</div>
+                                <div><strong class="font-medium">Difficulty:</strong> Select in menu. (Hard = 120s)
+                                </div>
+                                <div><strong class="font-medium">Category:</strong> Choose in menu.</div>
+                                <div>Click <strong class="font-medium text-primary">Start Game</strong>!</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">2. Gameplay</h3>
+                            <div class="ml-4 space-y-2">
+                                <div><strong class="font-medium">6 attempts</strong> to guess 5-letter word.</div>
+                                <div>Type guess & press <strong class="font-medium">Enter</strong>.</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">3. Color Coding</h3>
+                            <div class="ml-4 space-y-2">
+                                <div class="flex items-center"><span
+                                        class="w-5 h-5 bg-correct rounded mr-2"></span><strong
+                                        class="text-correct">Green:</strong> Correct letter/position.</div>
+                                <div class="flex items-center"><span
+                                        class="w-5 h-5 bg-present rounded mr-2"></span><strong
+                                        class="text-present">Yellow:</strong> Correct letter, wrong position.</div>
+                                <div class="flex items-center"><span
+                                        class="w-5 h-5 bg-absent rounded mr-2"></span><strong
+                                        class="text-text-muted">Gray:</strong> Letter not in word.</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">4. Win/Lose</h3>
+                            <div class="ml-4 space-y-2">
+                                <div><strong class="font-medium">Win:</strong> Guess word in 6 tries (or time).</div>
+                                <div><strong class="font-medium">Lose:</strong> Run out of attempts/time.</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">5. Points</h3>
+                            <div class="ml-4 space-y-2">
+                                <div>+2 per Green, +1 per Yellow.</div>
+                                <div>+20 total bonus for 1st try guess.</div>
+                                <div>Hard Mode Win: +1 per 4s left.</div>
+                                <div>Scores accumulate if logged in.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button id="back-to-menu-from-sections-btn"
+                    class="hidden mt-4 flex items-center mx-auto bg-secondary hover:bg-secondary-hover text-white font-bold py-2 px-5 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                            clip-rule="evenodd" />
+                    </svg> Back to Menu </button>
+            </div>
+        </div>
+
+        <div id="game-container" class="hidden flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+            <div id="mobile-game-info-banner" class="lg:hidden">
+                <div>
+                    <p>Category:</p>
+                    <p id="mobile-category-display">General</p>
+                </div>
+                <div>
+                    <p>Mode:</p>
+                    <p id="mobile-difficulty-display">Easy</p>
+                </div>
+                <div>
+                    <p>Time:</p>
+                    <p id="mobile-timer">-</p>
+                </div>
+                <div class="mobile-action-buttons">
+                    <button id="change-category-btn-mobile">Change Cat.</button>
+                    <button id="change-difficulty-btn-mobile">Change Diff.</button>
+                </div>
+            </div>
+
+            <aside id="in-game-left-column" class="w-full lg:w-64 xl:w-72 flex-shrink-0 order-first mt-4 lg:mt-0
+            bg-card-bg rounded-2xl shadow-lg p-5 flex flex-col space-y-5">
+                <div class="bg-gradient-to-b from-amber-700 to-amber-900 rounded-2xl p-5 shadow-lg">
+                    <h3 class="text-base font-semibold mb-3 text-white opacity-80">Latest Achievements</h3>
+                    <ul id="latest-achievements-list-ingame" class="space-y-2 text-sm">
+                        <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 text-white truncate"
+                            title="Achievement #1">Achievement #1</li>
+                        <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 text-white truncate"
+                            title="Achievement #2">Achievement #2</li>
+                        <li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 text-white truncate"
+                            title="Achievement #3">Achievement #3</li>
+                    </ul>
+                </div>
+                <div id="player-rank-card-ingame"
+                    class="bg-gradient-to-b from-blue-900 to-indigo-900 rounded-2xl p-5 shadow-lg text-white text-center">
+                    <p id="rank-player-name-ingame" class="text-sm font-medium mb-1">number 1 player_name</p>
+                    <p id="rank-position-ingame" class="text-lg font-semibold mb-2 flex items-center justify-center">
+                        <span class="text-yellow-400 mr-1.5">🏆</span> ranked #1
+                    </p>
+                    <p id="rank-points-ingame" class="text-sm font-medium">with x points</p>
+                </div>
+                <div class="space-y-3">
+                    <button id="quit-to-menu-btn-ingame"
+                        class="w-full bg-neutral-900 hover:bg-neutral-800 text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Quit
+                        to menu</button>
+                    <button id="change-category-btn-ingame"
+                        class="w-full bg-neutral-900 hover:bg-neutral-800 text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Change
+                        Category</button>
+                    <button id="change-difficulty-btn-ingame"
+                        class="w-full bg-neutral-900 hover:bg-neutral-800 text-text-secondary font-medium py-2.5 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">Change
+                        Difficulty</button>
+                </div>
+            </aside>
+
+            <div id="game-center-area"
+                class="relative flex-grow flex flex-col items-center justify-center order-last lg:order-none min-h-[60vh] lg:min-h-0 w-full">
+                <div id="game-board" class="flex flex-col space-y-grid-gap my-auto mx-auto">
+                </div>
+                <div id="keyboard" class="w-full max-w-[600px] px-2 mt-4 mb-2">
+                </div>
+            </div>
+
+            <aside id="in-game-right-info"
+                class="w-full lg:w-56 xl:w-64 flex-shrink-0 space-y-4 order-2 lg:order-last mt-4 lg:mt-0">
+                <div id="score-card" class="bg-card-bg rounded-xl p-4 text-center shadow-md">
+                    <p class="text-sm text-text-muted mb-1">Score</p>
+                    <div id="score" class="text-2xl font-bold text-text-primary" aria-live="polite">0</div>
+                </div>
+                <div id="game-user-info-card" class="bg-card-bg rounded-xl p-4 text-center shadow-md">
+                    <p class="text-sm text-text-muted mb-1">Player</p>
+                    <div id="game-user-info" class="text-base font-medium text-text-secondary truncate"
+                        title="Player Name">Guest</div>
+                </div>
+                <div id="difficulty-mode-card" class="bg-card-bg rounded-xl p-4 text-center shadow-md">
+                    <p class="text-sm text-text-muted mb-1">Mode</p>
+                    <div id="difficulty-mode" class="text-base font-medium text-green-400">Easy Mode</div>
+                </div>
+                <div id="category-display-card" class="bg-card-bg rounded-xl p-4 text-center shadow-md">
+                    <p class="text-sm text-text-muted mb-1">Category</p>
+                    <div id="category-display" class="text-base font-medium text-primary capitalize">General</div>
+                </div>
+                <div id="timer-card" class="bg-card-bg rounded-xl p-4 text-center shadow-md">
+                    <p class="text-sm text-text-muted mb-1">Time Left</p>
+                    <div id="timer" class="text-base font-medium text-text-secondary" aria-live="polite">-</div>
+                </div>
+            </aside>
+
+            <div id="message-box"
+                class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50" role="dialog"
+                aria-modal="true">
+                <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-xl text-center max-w-sm w-11/12 font-sans">
+                    <h2 id="message-title" class="text-2xl sm:text-3xl font-bold text-text-primary mb-4"></h2>
+                    <p id="message-text" class="text-md sm:text-lg text-text-secondary mb-6"></p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                        <button id="new-game-btn"
+                            class="bg-success hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">New
+                            Game</button>
+                        <button id="quit-btn"
+                            class="bg-error hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Quit
+                            to Menu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] space-y-2"></div>
+
+    <div id="category-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-70"
+        role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
+        <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-xl text-center max-w-md w-11/12 font-sans">
+            <h2 id="category-modal-title" class="text-2xl sm:text-3xl font-bold text-text-primary mb-6">Choose New
+                Category</h2>
+            <div id="category-options-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+            </div>
+            <button id="cancel-category-change-btn"
+                class="w-full sm:w-auto bg-secondary hover:bg-secondary-hover text-white font-bold py-2 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <div id="difficulty-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-70"
+        role="dialog" aria-modal="true" aria-labelledby="difficulty-modal-title">
+        <div class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-xl text-center max-w-xs w-11/12 font-sans">
+            <h2 id="difficulty-modal-title" class="text-2xl sm:text-3xl font-bold text-text-primary mb-6">Choose New
+                Difficulty</h2>
+            <div id="difficulty-options-container" class="flex flex-col space-y-3 mb-6">
+            </div>
+            <button id="cancel-difficulty-change-btn"
+                class="w-full sm:w-auto bg-secondary hover:bg-secondary-hover text-white font-bold py-2 px-6 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+    <script>
+        const menuToggleBtn = document.getElementById('header-menu-toggle');
+        const dropdownMenu = document.getElementById('header-dropdown-menu');
+
+        function toggleDropdown() {
+            dropdownMenu?.classList.toggle('hidden');
+        }
+
+        function closeDropdown() {
+            dropdownMenu?.classList.add('hidden');
+        }
+
+        if (menuToggleBtn) {
+            menuToggleBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleDropdown();
+            });
+        }
+        document.addEventListener('click', (event) => {
+            if (!dropdownMenu?.contains(event.target) && !menuToggleBtn?.contains(event.target)) {
+                closeDropdown();
+            }
+        });
+
+        document.getElementById('dropdown-achievements-btn')?.addEventListener('click', () => {
+            if (typeof showSection === 'function') showSection('achievements-section');
+            closeDropdown();
+        });
+        document.getElementById('dropdown-statistics-btn')?.addEventListener('click', () => {
+            if (typeof showSection === 'function') showSection('statistics-section');
+            closeDropdown();
+        });
+        document.getElementById('dropdown-leaderboard-btn')?.addEventListener('click', () => {
+            if (typeof showSection === 'function') showSection('leaderboard-section');
+            closeDropdown();
+        });
+        document.getElementById('dropdown-quit-btn')?.addEventListener('click', () => {
+            if (typeof currentGameInstance !== 'undefined' && currentGameInstance) {
+                currentGameInstance.resetGameToMenu();
+            } else if (typeof showWordleMenuView === 'function') {
+                showWordleMenuView();
+            }
+            closeDropdown();
+        });
+
+    </script>
+
+</body>
+
+</html>

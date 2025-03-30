@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Wordle Challenge - Login / Sign Up</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Galindo&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { 'dark-background': '#121213', 'card-bg': '#1A1A1B', 'input-bg': '#27272A', 'border-color': '#3A3A3C', 'key-bg': '#333333', 'key-hover': '#444444', 'primary': '#6366F1', 'primary-hover': '#4F46E5', 'secondary': '#4B5563', 'secondary-hover': '#374151', 'correct': '#538D4E', 'present': '#B59F3B', 'absent': '#3A3A3C', 'text-primary': '#FFFFFF', 'text-secondary': '#D1D5DB', 'text-muted': '#9CA3AF', 'error': '#EF4444', 'success': '#10B981', 'overlay-gradient-start': '#6366F1', 'overlay-gradient-end': '#8B5CF6', }, fontFamily: { 'galindo': ['Galindo', 'cursive'], 'sans': ['Inter', 'sans-serif'] }, boxShadow: { 'input-focus': '0 0 0 2px #6366F1', 'card': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)', 'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', }, borderRadius: { 'xl': '0.75rem', }, transitionDuration: { '600': '600ms', }, zIndex: { '60': '60', '100': '100', '110': '110' } } } }
+    </script>
+    <link rel="stylesheet" href="styles/auth.css">
+</head>
+
+<body class="bg-dark-background text-text-primary">
+
+    <div class="auth-container" id="auth-container">
+        <div class="form-container signup-container" id="signup-form-container">
+            <form id="signup-form" class="form-content">
+                <h1 class="text-2xl">Create Account</h1>
+                <span class="text-sm mb-4 text-text-muted">Use your email for registration</span>
+                <input type="text" id="signup-username" placeholder="Username" required class="text-base"
+                    minlength="3" />
+                <input type="email" id="signup-email" placeholder="Email" required class="text-base" />
+                <input type="password" id="signup-password" placeholder="Password" required class="text-base"
+                    minlength="6" />
+                <div class="select-wrapper">
+                    <select id="signup-team" required class="text-base">
+                        <option value="" disabled selected>Select Your Team</option>
+                        <option value="red">Red Team</option>
+                        <option value="blue">Blue Team</option>
+                    </select>
+                    <div class="select-arrow"> <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20">
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                        </svg> </div>
+                </div>
+                <div class="relative" id="country-search-wrapper-signup">
+                    <input type="text" id="country-search-input-signup" placeholder="Type to search Country..."
+                        class="bg-input-bg border border-border-color px-4 py-3 w-full rounded-md text-text-primary focus:outline-none focus:border-primary focus:shadow-input-focus text-base"
+                        autocomplete="off">
+                    <input type="hidden" id="signup-country" name="country">
+                    <div id="country-results-list-signup"
+                        class="absolute z-60 w-full bg-card-bg border border-border-color rounded-md bottom-full mb-1 max-h-60 overflow-y-auto hidden shadow-lg">
+                    </div>
+                </div>
+                <div id="signup-message" class="auth-message" style="display: none;"></div>
+                <button type="submit" id="signup-button" disabled>Sign Up</button>
+                <p class="text-sm mt-6 text-text-muted md:hidden"> Already have an account? <span class="toggle-link"
+                        id="switchToLoginMobile">Login</span> </p>
+            </form>
+        </div>
+
+        <div class="form-container login-container" id="login-form-container">
+            <form id="login-form" class="form-content">
+                <h1 class="text-2xl">Login</h1>
+                <span class="text-sm mb-4 text-text-muted">Use your account</span>
+                <input type="email" id="login-email" placeholder="Email" required class="text-base" />
+                <input type="password" id="login-password" placeholder="Password" required class="text-base" />
+                <a href="#" id="forgot-password-link">Forgot your password?</a>
+                <div id="login-message" class="auth-message" style="display: none;"></div>
+                <button type="submit" id="login-button" disabled>Login</button>
+                <span class="text-xs mt-4 text-text-muted">Or <a href="index.html"
+                        class="text-primary hover:underline">Continue as Guest</a></span>
+                <p class="text-sm mt-6 text-text-muted md:hidden"> Don't have an account? <span class="toggle-link"
+                        id="switchToSignUpMobile">Sign Up</span> </p>
+            </form>
+        </div>
+
+        <div class="overlay-container" id="overlay-cont">
+            <div class="overlay">
+                <div class="overlay-panel overlay-left">
+                    <h1 class="text-2xl">Welcome Back!</h1>
+                    <p>To keep playing the Wordle Challenge, please log in with your credentials.</p> <button
+                        class="ghost" id="signIn">Login</button>
+                </div>
+                <div class="overlay-panel overlay-right">
+                    <h1 class="text-2xl">New Challenger?</h1>
+                    <p>Enter your details, pick a team, and start your Wordle journey!</p> <button class="ghost"
+                        id="signUp">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reset-request-section" class="reset-section" style="display: none;">
+        <div class="reset-content">
+            <button id="close-reset-request" class="close-button" aria-label="Close">×</button>
+            <h2>Reset Password</h2>
+            <p>Enter your email address below. If an account exists, we'll send you a link to reset your password.</p>
+            <form id="reset-request-form">
+                <input type="email" id="reset-email-input" placeholder="Your Email Address" required>
+                <div id="reset-request-message" class="reset-message" style="display: none;"></div>
+                <button type="submit" id="send-reset-link-button" disabled>Send Reset Link</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="reset-update-section" class="reset-section" style="display: none;">
+        <div class="reset-content">
+            <h2>Set New Password</h2>
+            <p>Enter and confirm your new password below.</p>
+            <form id="reset-update-form">
+                <input type="password" id="new-password-input" placeholder="New Password (min. 6 characters)" required
+                    minlength="6">
+                <input type="password" id="confirm-password-input" placeholder="Confirm New Password" required
+                    minlength="6">
+                <div id="reset-update-message" class="reset-message" style="display: none;"></div>
+                <button type="submit" id="update-password-button" disabled>Update Password</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/countries.js"></script>
+    <script src="js/auth.js"></script>
+
+</body>
+
+</html>
