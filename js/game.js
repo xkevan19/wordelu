@@ -1887,16 +1887,16 @@
       try {
         const { data, error } = await _supabase
           .from("achievements")
-          .select("achievement_id, inserted_at")
+          .select("achievement_id, unlocked_at")
           .eq("user_id", currentUser.id)
-          .order("inserted_at", { ascending: false })
+          .order("unlocked_at", { ascending: false })
           .limit(3);
 
         if (error && error.code !== "42703") {
           throw error;
         } else if (error && error.code === "42703") {
           console.warn(
-            "Column 'inserted_at' might be missing or inaccessible. Fetching achievements without ordering."
+            "Column 'unlocked_at' might be missing or inaccessible. Fetching achievements without ordering."
           );
           const { data: fallbackData, error: fallbackError } = await _supabase
             .from("achievements")
