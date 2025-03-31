@@ -65,7 +65,6 @@
 
         #mobile-game-info-banner {
             display: flex;
-            flex-direction: column;
             background-color: rgba(26, 26, 27, 0.95);
             color: white;
             padding: 0.75rem;
@@ -77,12 +76,10 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-
         .status-row {
             display: flex;
             justify-content: space-around;
             width: 100%;
-            margin-bottom: 0.75rem;
         }
 
         .status-item {
@@ -106,57 +103,99 @@
             color: white;
         }
 
-
-        .action-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.75rem;
-            width: 100%;
-        }
-
-        .action-button {
-            flex: 1;
+        .menu-toggle {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(75, 85, 99, 0.9);
+            color: white;
+            border: none;
+            border-radius: 0 0.5rem 0.5rem 0;
+            width: 32px;
+            height: 64px;
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 60;
+            transition: left 0.3s ease, background-color 0.2s ease;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .menu-toggle:hover,
+        .menu-toggle:active {
+            background-color: rgba(55, 65, 81, 0.95);
+        }
+
+        .menu-toggle.open {
+            left: 180px;
+        }
+
+        .menu-toggle.open .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .chevron-icon {
+            transition: transform 0.3s ease;
+        }
+
+
+        .slide-menu {
+            position: fixed;
+            left: -200px;
+            top: 0;
+            height: 100%;
+            width: 200px;
+            background-color: rgba(26, 26, 27, 0.98);
+            z-index: 59;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-menu.open {
+            left: 0;
+        }
+
+        .menu-content {
+            padding: 1.5rem 1rem;
+            margin-top: 64px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .menu-button {
+            display: flex;
+            align-items: center;
             background-color: #4B5563;
             color: white;
-            padding: 0.75rem 0.5rem;
+            padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             font-size: 0.875rem;
             font-weight: 500;
             transition: all 0.2s ease;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            width: 100%;
         }
 
-        .action-button:hover,
-        .action-button:active {
+        .menu-button:hover,
+        .menu-button:active {
             background-color: #374151;
             transform: translateY(1px);
         }
 
         .button-icon {
-            margin-right: 0.5rem;
+            margin-right: 0.75rem;
             font-size: 1rem;
         }
 
-
-        @media (max-width: 360px) {
-            .status-value {
-                font-size: 0.875rem;
-            }
-
-            .action-button {
-                padding: 0.625rem 0.375rem;
-            }
-
-            .button-text {
-                font-size: 0.75rem;
-            }
-        }
-
         @media (min-width: 1024px) {
-            #mobile-game-info-banner {
+
+            #mobile-game-info-banner,
+            .menu-toggle,
+            .slide-menu {
                 display: none;
             }
 
@@ -564,13 +603,23 @@
                         <span id="mobile-timer" class="status-value">-</span>
                     </div>
                 </div>
+            </div>
 
-                <div class="action-row">
-                    <button id="change-category-btn-mobile" class="action-button">
+            <button id="menu-toggle" class="menu-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="chevron-icon">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+
+            <div id="slide-menu" class="slide-menu">
+                <div class="menu-content">
+                    <button id="change-category-btn-mobile" class="menu-button">
                         <span class="button-icon">📁</span>
                         <span class="button-text">Change Category</span>
                     </button>
-                    <button id="change-difficulty-btn-mobile" class="action-button">
+                    <button id="change-difficulty-btn-mobile" class="menu-button">
                         <span class="button-icon">🔄</span>
                         <span class="button-text">Change Difficulty</span>
                     </button>
@@ -695,6 +744,7 @@
 
     <script src="js/game.js"></script>
     <script>
+        // Existing header dropdown menu functionality
         const menuToggleBtn = document.getElementById('header-menu-toggle');
         const dropdownMenu = document.getElementById('header-dropdown-menu');
 
@@ -712,6 +762,7 @@
                 toggleDropdown();
             });
         }
+
         document.addEventListener('click', (event) => {
             if (!dropdownMenu?.contains(event.target) && !menuToggleBtn?.contains(event.target)) {
                 closeDropdown();
@@ -743,6 +794,52 @@
             closeDropdown();
         });
 
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuToggle = document.getElementById('menu-toggle');
+            const slideMenu = document.getElementById('slide-menu');
+
+
+            if (!menuToggle || !slideMenu) return;
+
+
+            menuToggle.addEventListener('click', function (event) {
+                event.stopPropagation();
+                menuToggle.classList.toggle('open');
+                slideMenu.classList.toggle('open');
+            });
+
+
+            document.addEventListener('click', function (event) {
+                if (!slideMenu.contains(event.target) &&
+                    !menuToggle.contains(event.target) &&
+                    slideMenu.classList.contains('open')) {
+                    menuToggle.classList.remove('open');
+                    slideMenu.classList.remove('open');
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && slideMenu.classList.contains('open')) {
+                    menuToggle.classList.remove('open');
+                    slideMenu.classList.remove('open');
+                }
+            });
+
+            const categoryBtn = document.getElementById('change-category-btn-mobile');
+            const difficultyBtn = document.getElementById('change-difficulty-btn-mobile');
+
+            categoryBtn?.addEventListener('click', function () {
+
+                menuToggle.classList.remove('open');
+                slideMenu.classList.remove('open');
+            });
+
+            difficultyBtn?.addEventListener('click', function () {
+
+                menuToggle.classList.remove('open');
+                slideMenu.classList.remove('open');
+            });
+        });
     </script>
 
 </body>
