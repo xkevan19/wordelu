@@ -1115,7 +1115,14 @@
       const currentScore = this.score;
 
       if (this.userId && _supabase) {
-        await this.saveGameResultToSupabase();
+        try {
+          await this.saveGameResultToSupabase();
+        } catch (e) {
+          console.error(
+            "Explicit catch for saveGameResultToSupabase in handleWin:",
+            e
+          );
+        }
         try {
           this.playerStats.totalGamesPlayed++;
           this.playerStats.totalWins++;
@@ -1124,7 +1131,18 @@
           updateStatisticsDisplayGlobal(this.playerStats);
           const unlockedAchievements = this.checkAchievements();
           updateAchievementsDisplayGlobal(this.achievements);
-          await this.updateSupabaseAggregates(currentScore);
+
+          try {
+            await this.updateSupabaseAggregates(currentScore);
+          } catch (e) {
+            console.error(
+              "Explicit catch for updateSupabaseAggregates in handleWin:",
+              e
+            );
+            showToast("Error updating your total score online.", 4000);
+            throw e;
+          }
+
           await Promise.all(
             unlockedAchievements.map((ach) =>
               this.unlockSupabaseAchievement(ach)
@@ -1141,11 +1159,14 @@
             } unlocked: ${achievementNames}!`;
           }
           this.showMessage("Congratulations!", message);
+          this.playSound("win"); // Moved sound inside successful try
         } catch (err) {
-          console.error("Error saving win results:", err);
+          console.error("Error during handleWin processing:", err);
           showToast("Error saving your results online.");
           let message = `🎉 You guessed it: **${this.targetWord}**! Score: ${currentScore}.\n(Failed to save score online)`;
           this.showMessage("Congratulations!", message);
+          // Play lose sound or a different error sound if saving fails significantly?
+          this.playSound("wrong"); // Or keep silent
         }
       } else {
         this.addScoreToLocalGuestLeaderboard();
@@ -1154,8 +1175,9 @@
         updateAchievementsDisplayGlobal(null);
         let message = `🎉 You guessed it: **${this.targetWord}**! Score: ${currentScore}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save progress and compete!`;
         this.showMessage("You Won!", message, true);
+        this.playSound("win");
       }
-      this.playSound("win");
+      // Removed sound from here as it's now inside try/catch
     }
 
     async handleLose() {
@@ -1166,19 +1188,39 @@
       clearInterval(this.timerInterval);
 
       if (this.userId && _supabase) {
-        await this.saveGameResultToSupabase();
+        try {
+          await this.saveGameResultToSupabase();
+        } catch (e) {
+          console.error(
+            "Explicit catch for saveGameResultToSupabase in handleLose:",
+            e
+          );
+        }
         try {
           this.playerStats.totalGamesPlayed++;
           updateStatisticsDisplayGlobal(this.playerStats);
-          await this.updateSupabaseAggregates(0);
+
+          try {
+            await this.updateSupabaseAggregates(0);
+          } catch (e) {
+            console.error(
+              "Explicit catch for updateSupabaseAggregates in handleLose:",
+              e
+            );
+            showToast("Error updating game stats online.", 4000);
+            throw e;
+          }
+
           await loadAndDisplayInitialData();
           let message = `😥 The word was: **${this.targetWord}**. Total Score: ${this.playerStats.totalScore}. Better luck next time!`;
           this.showMessage("Game Over", message);
+          this.playSound("lose"); // Moved sound inside successful try
         } catch (err) {
-          console.error("Error updating stats on loss:", err);
+          console.error("Error during handleLose processing:", err);
           showToast("Error saving game stats.");
           let message = `😥 The word was: **${this.targetWord}**. Failed to save stats. Better luck next time!`;
           this.showMessage("Game Over", message);
+          this.playSound("lose"); // Play sound even if saving failed
         }
       } else {
         updateStatisticsDisplayGlobal(null);
@@ -1186,8 +1228,9 @@
         await loadAndDisplayInitialData();
         let message = `😥 The word was: **${this.targetWord}**. Score: 0.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save your progress!`;
         this.showMessage("Game Over", message, true);
+        this.playSound("lose");
       }
-      this.playSound("lose");
+      // Removed sound from here
     }
 
     async fetchSupabaseStats() {
