@@ -217,7 +217,7 @@
         await loadAndDisplayInitialData();
 
         if (currentGameInstance) {
-          updateGameHeaderUserInfo();
+          currentGameInstance.updateGameHeaderUserInfo?.();
         } else if (
           !document
             .getElementById("game-container")
@@ -2009,6 +2009,7 @@
     const leaderboardTitle = document.querySelector("#leaderboard-section h2");
 
     if (!leaderboardBody) return;
+
     leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-text-muted p-4">Loading leaderboard...</td></tr>`;
     let leaderboardData = [];
     let isLocal = false;
@@ -2039,53 +2040,85 @@
     );
     try {
       if (currentUser && _supabase) {
-        let query;
+        let finalAggregatedData = [];
         if (categoryFilter === "all" && difficultyFilter === "all") {
           console.log("Fetching global leaderboard from game_stats");
-          query = _supabase
+          const { data, error } = await _supabase
             .from("game_stats")
             .select(
               `total_score, user_id, profile:profiles!inner(username, team)`
             )
             .order("total_score", { ascending: false })
             .limit(CONFIG.LEADERBOARD_SIZE);
-          const { data, error } = await query;
           if (error) throw error;
-          leaderboardData = (data || []).map((item) => ({
+          finalAggregatedData = (data || []).map((item) => ({
             user_id: item.user_id,
             profile: item.profile,
             score: item.total_score,
           }));
         } else {
-          console.log("Fetching filtered leaderboard from game_results");
-          query = _supabase
+          console.log(
+            "Fetching filtered leaderboard from game_results (two-step)"
+          );
+          let resultsQuery = _supabase
             .from("game_results")
-            .select(
-              `user_id, score:score, profile:profiles!inner(username, team)`
-            );
+            .select(`user_id, score`);
           if (categoryFilter !== "all") {
-            query = query.eq("category", categoryFilter);
+            resultsQuery = resultsQuery.eq("category", categoryFilter);
           }
           if (difficultyFilter !== "all") {
-            query = query.eq("difficulty", difficultyFilter);
+            resultsQuery = resultsQuery.eq("difficulty", difficultyFilter);
           }
-          const { data: resultsData, error: resultsError } = await query;
+          const { data: resultsData, error: resultsError } = await resultsQuery;
           if (resultsError) throw resultsError;
-          const userScores = {};
+          const userScoresMap = {};
           (resultsData || []).forEach((result) => {
-            if (!userScores[result.user_id]) {
-              userScores[result.user_id] = {
+            if (!userScoresMap[result.user_id]) {
+              userScoresMap[result.user_id] = {
                 user_id: result.user_id,
-                profile: result.profile,
                 score: 0,
               };
             }
-            userScores[result.user_id].score += result.score;
+            userScoresMap[result.user_id].score += result.score;
           });
-          leaderboardData = Object.values(userScores)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, CONFIG.LEADERBOARD_SIZE);
+          const aggregatedScores = Object.values(userScoresMap);
+          const userIds = aggregatedScores
+            .map((item) => item.user_id)
+            .filter((id) => id);
+          if (userIds.length > 0) {
+            const { data: profilesData, error: profilesError } = await _supabase
+              .from("profiles")
+              .select("id, username, team")
+              .in("id", userIds);
+            if (profilesError) {
+              console.error(
+                "Error fetching profiles for leaderboard:",
+                profilesError
+              );
+              finalAggregatedData = aggregatedScores.map((item) => ({
+                ...item,
+                profile: { username: "Unknown", team: "N/A" },
+              }));
+            } else {
+              const profilesMap = {};
+              (profilesData || []).forEach((profile) => {
+                profilesMap[profile.id] = profile;
+              });
+              finalAggregatedData = aggregatedScores.map((item) => ({
+                ...item,
+                profile: profilesMap[item.user_id] || {
+                  username: "Unknown",
+                  team: "N/A",
+                },
+              }));
+            }
+          } else {
+            finalAggregatedData = [];
+          }
         }
+        leaderboardData = finalAggregatedData
+          .sort((a, b) => b.score - a.score)
+          .slice(0, CONFIG.LEADERBOARD_SIZE);
         isLocal = false;
       } else {
         console.log("Fetching guest leaderboard from localStorage");
@@ -2428,5 +2461,4 @@
 
   window.showWordleMenuView = showWordleMenuView;
   window.showSection = showSection;
-  window.currentGameInstance = currentGameInstance;
 })();
