@@ -72,6 +72,7 @@
             padding: 0.5rem 1rem;
             position: sticky;
             top: 64px;
+            /* Adjusted top to account for navbar height */
             width: 100%;
             z-index: 55;
             border-bottom: 1px solid #3A3A3C;
@@ -94,10 +95,12 @@
             display: flex;
             gap: 0.5rem;
             margin-left: 0.5rem;
+            /* Added margin */
         }
 
         #mobile-game-info-banner .mobile-action-buttons button {
             background-color: #4B5563;
+            /* secondary */
             color: white;
             padding: 0.25rem 0.5rem;
             border-radius: 0.375rem;
@@ -109,6 +112,7 @@
 
         #mobile-game-info-banner .mobile-action-buttons button:hover {
             background-color: #374151;
+            /* secondary-hover */
         }
 
         @media (min-width: 1024px) {
@@ -123,13 +127,38 @@
 
             #game-center-area {
                 margin-top: 0;
+                /* Reset margin for large screens */
             }
         }
 
         @media (max-width: 1023px) {
             #game-center-area {
                 margin-top: 1rem;
+                /* Add margin for spacing below mobile banner */
             }
+        }
+
+        .select-arrow {
+            color: #9CA3AF;
+        }
+
+        select.custom-select {
+            appearance: none;
+            border: 1px solid #3A3A3C;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background-color: #27272A;
+            color: #FFFFFF;
+            line-height: 1.25;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+        }
+
+        select.custom-select:focus {
+            outline: none;
+            border-color: #6366F1;
+            box-shadow: 0 0 0 2px #6366F1;
         }
     </style>
 </head>
@@ -148,8 +177,10 @@
                 </button>
                 <a href="index.html" class="text-2xl font-galindo text-primary">Wordelu</a>
             </div>
+
             <div id="user-actions" class="flex items-center space-x-4">
             </div>
+
             <div id="header-dropdown-menu"
                 class="hidden absolute top-full left-0 mt-2 w-56 bg-card-bg rounded-lg shadow-xl p-2 z-50">
                 <button id="dropdown-achievements-btn">
@@ -170,12 +201,18 @@
                 </button>
                 <button id="dropdown-leaderboard-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                        <path fill-rule="evenodd"
-                            d="M4 5a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 011-1h6a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H7z"
+                        <path
+                            d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
                             clip-rule="evenodd" />
                     </svg>
-                    Leaderboard
+                    Global Ranks
+                </button>
+                <button id="dropdown-team-leaderboard-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                    </svg>
+                    Team Standings
                 </button>
                 <button id="dropdown-quit-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -197,6 +234,7 @@
                 </h1>
                 <p id="welcome-message" class="text-lg text-text-muted font-sans">Test your vocabulary!</p>
             </div>
+
             <div id="main-menu-input-card"
                 class="bg-card-bg p-6 sm:p-8 rounded-xl shadow-card w-full max-w-md mb-6 mx-auto">
                 <div class="mb-5">
@@ -249,6 +287,7 @@
                     </div>
                 </div>
             </div>
+
             <div id="menu-buttons-container" class="w-full max-w-md mb-6 text-center mx-auto">
                 <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
                     <button id="show-instructions-btn"
@@ -259,9 +298,54 @@
                     class="bg-primary hover:bg-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-200 ease-in-out font-sans">
                     Start Game </button>
             </div>
+
+
             <div id="sections-display-area" class="w-full max-w-3xl mt-2 mb-6 mx-auto">
+
                 <div id="leaderboard-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
-                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Leaderboard</h2>
+                    <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Global Leaderboard</h2>
+
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <div class="flex-1">
+                            <label for="leaderboard-category-filter"
+                                class="block text-sm font-medium text-text-secondary mb-1">Filter by Category</label>
+                            <div class="relative">
+                                <select id="leaderboard-category-filter" class="custom-select">
+                                    <option value="all">All Categories</option>
+                                </select>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted select-arrow">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-text-muted mt-1 italic">*Filtering by category/difficulty requires
+                                future data updates.</p>
+                        </div>
+                        <div class="flex-1">
+                            <label for="leaderboard-difficulty-filter"
+                                class="block text-sm font-medium text-text-secondary mb-1">Filter by Difficulty</label>
+                            <div class="relative">
+                                <select id="leaderboard-difficulty-filter" class="custom-select">
+                                    <option value="all">All Difficulties</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted select-arrow">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left text-text-secondary">
                             <thead class="text-xs text-text-muted uppercase bg-input-bg">
@@ -280,6 +364,7 @@
                         </table>
                     </div>
                 </div>
+
                 <div id="team-leaderboard-section"
                     class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
                     <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Team Standings</h2>
@@ -299,6 +384,7 @@
                         </table>
                     </div>
                 </div>
+
                 <div id="statistics-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
                     <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Player Statistics</h2>
                     <p id="stats-guest-message" class="text-center text-text-muted py-4 hidden"><a href="auth.html"
@@ -347,6 +433,7 @@
                         </div>
                     </dl>
                 </div>
+
                 <div id="achievements-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
                     <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">Achievements</h2>
                     <p id="achievements-guest-message" class="text-center text-text-muted py-4 hidden"><a
@@ -355,6 +442,7 @@
                         <p class="text-text-muted col-span-full text-center">Loading...</p>
                     </div>
                 </div>
+
                 <div id="instructions-section" class="hidden bg-card-bg p-6 sm:p-8 rounded-xl shadow-card font-sans">
                     <h2 class="text-3xl font-bold mb-6 text-center text-text-primary">How to Play & Score</h2>
                     <div class="space-y-6 text-text-secondary">
@@ -407,6 +495,8 @@
                         </div>
                     </div>
                 </div>
+
+
                 <button id="back-to-menu-from-sections-btn"
                     class="hidden mt-4 flex items-center mx-auto bg-secondary hover:bg-secondary-hover text-white font-bold py-2 px-5 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 font-sans">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
@@ -419,6 +509,7 @@
         </div>
 
         <div id="game-container" class="hidden flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+
             <div id="mobile-game-info-banner" class="lg:hidden">
                 <div>
                     <p>Category:</p>
@@ -589,6 +680,10 @@
         });
         document.getElementById('dropdown-leaderboard-btn')?.addEventListener('click', () => {
             if (typeof showSection === 'function') showSection('leaderboard-section');
+            closeDropdown();
+        });
+        document.getElementById('dropdown-team-leaderboard-btn')?.addEventListener('click', () => {
+            if (typeof showSection === 'function') showSection('team-leaderboard-section');
             closeDropdown();
         });
         document.getElementById('dropdown-quit-btn')?.addEventListener('click', () => {

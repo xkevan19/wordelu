@@ -2,7 +2,7 @@
   const CONFIG = {
     WORD_LENGTH: 5,
     MAX_ATTEMPTS: 6,
-    LEADERBOARD_SIZE: 10,
+    LEADERBOARD_SIZE: 20,
     HARD_MODE_DURATION: 120,
     TOAST_DURATION: 3000,
   };
@@ -97,7 +97,6 @@
       "dance",
       "radio",
       "video",
-      "show",
     ],
     tech: [
       "cloud",
@@ -110,11 +109,7 @@
       "laser",
       "space",
       "probe",
-      "light",
       "virus",
-      "genes",
-      "earth",
-      "power",
     ],
     science: [
       "orbit",
@@ -129,6 +124,15 @@
       "power",
     ],
   };
+
+  for (const category in WORDS) {
+    if (Object.hasOwnProperty.call(WORDS, category)) {
+      WORDS[category] = WORDS[category].filter(
+        (word) => word.length === CONFIG.WORD_LENGTH
+      );
+    }
+  }
+
   const ACHIEVEMENTS = {
     FIRST_VICTORY: {
       id: "FIRST_VICTORY",
@@ -231,6 +235,8 @@
         handleGuestState();
       }
 
+      populateLeaderboardFilterDropdowns();
+      setupLeaderboardFilterListeners();
       await loadAndDisplayInitialData();
       if (!currentGameInstance) {
         showWordleMenuView();
@@ -239,8 +245,54 @@
       console.error("Supabase Init Error:", error);
       showToast(`Init Error: ${error.message}`);
       handleGuestState();
+      populateLeaderboardFilterDropdowns();
+      setupLeaderboardFilterListeners();
       await loadAndDisplayInitialData();
       showWordleMenuView();
+    }
+  }
+
+  function populateLeaderboardFilterDropdowns() {
+    const categoryFilter = document.getElementById(
+      "leaderboard-category-filter"
+    );
+    if (!categoryFilter) return;
+
+    while (categoryFilter.options.length > 1) {
+      categoryFilter.remove(1);
+    }
+
+    Object.keys(WORDS).forEach((categoryKey) => {
+      const option = document.createElement("option");
+      option.value = categoryKey;
+      option.textContent =
+        categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1);
+      categoryFilter.appendChild(option);
+    });
+  }
+
+  function setupLeaderboardFilterListeners() {
+    const categoryFilter = document.getElementById(
+      "leaderboard-category-filter"
+    );
+    const difficultyFilter = document.getElementById(
+      "leaderboard-difficulty-filter"
+    );
+
+    const reloadLeaderboard = () => {
+      console.log(
+        "Leaderboard filters changed. Reloading leaderboard (Note: actual filtering is limited by current data structure)."
+      );
+      loadAndDisplayLeaderboard();
+    };
+
+    if (categoryFilter) {
+      categoryFilter.removeEventListener("change", reloadLeaderboard);
+      categoryFilter.addEventListener("change", reloadLeaderboard);
+    }
+    if (difficultyFilter) {
+      difficultyFilter.removeEventListener("change", reloadLeaderboard);
+      difficultyFilter.addEventListener("change", reloadLeaderboard);
     }
   }
 
@@ -252,7 +304,12 @@
     if (currentUser && userProfile) {
       const wt = document.createElement("span");
       wt.className = "text-sm text-text-secondary hidden sm:inline";
-      wt.textContent = `Hi, ${userProfile.username}!`;
+      let teamIndicator = "";
+      if (userProfile.team === "red")
+        teamIndicator = '<span class="text-red-400 ml-1">(Red)</span>';
+      else if (userProfile.team === "blue")
+        teamIndicator = '<span class="text-blue-400 ml-1">(Blue)</span>';
+      wt.innerHTML = `Hi, ${userProfile.username}! ${teamIndicator}`;
 
       const al = document.createElement("a");
       al.href = "account.html";
@@ -299,18 +356,12 @@
   }
 
   function updateSidebarButtonsVisibility() {
-    const tb = document.getElementById("show-team-leaderboard-btn");
-    if (tb) {
-      tb.classList.add("hidden");
-    }
-    const dropdownTeamBtn = document.querySelector(
-      '#header-dropdown-menu button[id^="dropdown-team"]'
+    const teamLeaderboardBtn = document.getElementById(
+      "dropdown-team-leaderboard-btn"
     );
-    if (dropdownTeamBtn) {
-      dropdownTeamBtn.classList.toggle(
-        "hidden",
-        !(currentUser && userProfile?.team)
-      );
+
+    if (teamLeaderboardBtn) {
+      teamLeaderboardBtn.classList.remove("hidden");
     }
   }
 
@@ -352,13 +403,15 @@
 
     if (lii) {
       lii.classList.remove("hidden");
+      let loggedInText = "Logged in";
       if (userProfile?.username) {
-        lii.textContent = `Logged in as ${userProfile.username}`;
+        loggedInText = `Logged in as ${userProfile.username}`;
+        if (userProfile.team === "red") loggedInText += " (Red)";
+        else if (userProfile.team === "blue") loggedInText += " (Blue)";
       } else if (currentUser?.email) {
-        lii.textContent = `Logged in as ${currentUser.email}`;
-      } else {
-        lii.textContent = "Logged in";
+        loggedInText = `Logged in as ${currentUser.email}`;
       }
+      lii.textContent = loggedInText;
     }
 
     if (wm && userProfile?.username) {
@@ -423,16 +476,19 @@
     if (achs && achs.length > 0) {
       achs.slice(0, 3).forEach((a) => {
         const li = document.createElement("li");
-        li.className = "bg-black bg-opacity-20 rounded-lg p-2 px-3 truncate";
+        li.className =
+          "bg-black bg-opacity-20 rounded-lg p-2 px-3 truncate text-white";
         const achievementName =
           typeof a === "string" ? a : a.name || "Achievement";
-        li.textContent = achievementName;
+        li.textContent = `${
+          ACHIEVEMENTS[a.id]?.icon || "🏅"
+        } ${achievementName}`;
         li.title = achievementName;
         l.appendChild(li);
       });
     } else {
       l.innerHTML =
-        '<li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 italic">None yet. Log in to track!</li>';
+        '<li class="bg-black bg-opacity-20 rounded-lg p-2 px-3 italic text-text-muted">None yet. Log in to track!</li>';
     }
   }
 
@@ -446,6 +502,7 @@
     c.appendChild(t);
 
     t.offsetHeight;
+
     t.classList.add("show");
 
     setTimeout(() => {
@@ -553,17 +610,21 @@
       const gui = this.rightInfoArea?.querySelector("#game-user-info");
       if (gui) {
         if (this.userId && this.userProfileData) {
-          let teamTag =
-            this.userProfileData.team === "red"
-              ? "(Red)"
-              : this.userProfileData.team === "blue"
-              ? "(Blue)"
-              : "";
+          let teamTag = "";
+          if (this.userProfileData.team === "red")
+            teamTag = '<span class="text-red-400">(Red)</span>';
+          else if (this.userProfileData.team === "blue")
+            teamTag = '<span class="text-blue-400">(Blue)</span>';
+
           const displayText = `${
             this.userProfileData.username || "Player"
           } ${teamTag}`.trim();
-          gui.textContent = displayText;
-          gui.title = displayText;
+          gui.innerHTML = displayText;
+          gui.title = `${this.userProfileData.username || "Player"} ${
+            this.userProfileData.team
+              ? "(" + this.userProfileData.team + ")"
+              : ""
+          }`.trim();
         } else {
           gui.textContent = this.playerName;
           gui.title = this.playerName;
@@ -579,6 +640,14 @@
             this.fetchSupabaseAchievements(),
           ]);
           this.playerStats = statsData;
+          if (
+            this.playerStats &&
+            !(this.playerStats.categoriesWon instanceof Set)
+          ) {
+            this.playerStats.categoriesWon = new Set(
+              this.playerStats.categoriesWon || []
+            );
+          }
           this.achievements = achievementsData;
           console.log("Loaded Supabase Stats:", this.playerStats);
           console.log("Loaded Supabase Achievements:", this.achievements);
@@ -609,23 +678,27 @@
     }
 
     selectRandomWord() {
-      const wordList = WORDS[this.category] || WORDS.general;
+      const wordList =
+        WORDS[this.category] && WORDS[this.category].length > 0
+          ? WORDS[this.category]
+          : WORDS.general;
+
       if (!wordList || wordList.length === 0) {
-        console.warn(
-          `No words found for category: ${this.category}. Falling back to general.`
+        console.error(
+          `CRITICAL: No words found for category '${this.category}' or fallback 'general'!`
         );
-        const fallbackList = WORDS.general;
-        if (!fallbackList || fallbackList.length === 0) {
-          console.error("CRITICAL: No general words found!");
-          return "ERROR";
-        }
-        return fallbackList[
-          Math.floor(Math.random() * fallbackList.length)
-        ].toUpperCase();
+        showToast("Error: Could not find a word for this category.", 5000);
+        return "ERROR";
       }
-      return wordList[
-        Math.floor(Math.random() * wordList.length)
-      ].toUpperCase();
+      const word =
+        wordList[Math.floor(Math.random() * wordList.length)].toUpperCase();
+      if (word.length !== this.WORD_LENGTH) {
+        console.warn(
+          `Selected word "${word}" from category "${this.category}" does not match WORD_LENGTH ${this.WORD_LENGTH}. Retrying.`
+        );
+        return this.selectRandomWord();
+      }
+      return word;
     }
 
     createGameBoard() {
@@ -671,7 +744,7 @@
           const keyButton = document.createElement("button");
           keyButton.textContent = key;
           keyButton.dataset.key = key;
-          keyButton.className = `key bg-key-bg text-white px-3 py-2 rounded hover:bg-key-hover transition duration-200 h-key-height text-sm font-medium ${
+          keyButton.className = `key bg-key-bg text-white px-3 py-2 rounded hover:bg-key-hover transition duration-200 h-key-height text-sm font-medium flex items-center justify-center ${
             key === "ENTER" || key === "⌫"
               ? "w-enter-width px-4"
               : "w-key-width"
@@ -712,6 +785,8 @@
           const newButton = button.cloneNode(true);
           button.parentNode.replaceChild(newButton, button);
           newButton.addEventListener("click", callback);
+        } else {
+          console.warn(`Button with ID "${buttonId}" not found.`);
         }
       };
 
@@ -724,6 +799,7 @@
       setupButtonListener("change-difficulty-btn-ingame", () =>
         this.showDifficultyModal()
       );
+
       setupButtonListener("change-category-btn-mobile", () =>
         this.showCategoryModal()
       );
@@ -741,17 +817,28 @@
           ?.classList.contains("hidden") ||
         !document
           .getElementById("difficulty-modal")
-          ?.classList.contains("hidden")
-      )
+          ?.classList.contains("hidden") ||
+        event.target.tagName === "INPUT" ||
+        event.target.tagName === "SELECT" ||
+        event.target.tagName === "TEXTAREA"
+      ) {
         return;
+      }
 
       const key = event.key.toUpperCase();
+
       if (/^[A-Z]$/.test(key)) {
         this.handleKeyPress(key);
       } else if (event.key === "Enter") {
         this.handleKeyPress("ENTER");
       } else if (event.key === "Backspace") {
         this.handleKeyPress("⌫");
+      }
+      if (
+        event.key === "Enter" ||
+        event.key === "Backspace" ||
+        /^[A-Z]$/.test(key)
+      ) {
       }
     }
 
@@ -776,7 +863,7 @@
 
         cell.textContent = letter;
         cell.classList.add("scale-110", "border-gray-400");
-        cell.classList.remove("border-gray-600");
+        cell.classList.remove("border-border-color");
         setTimeout(() => cell.classList.remove("scale-110"), 100);
 
         this.currentGuess.push(letter);
@@ -795,7 +882,7 @@
 
         cell.textContent = "";
         cell.classList.remove("border-gray-400");
-        cell.classList.add("border-gray-600");
+        cell.classList.add("border-border-color");
 
         this.currentGuess.pop();
         this.playSound("type");
@@ -811,6 +898,7 @@
       }
 
       const guess = this.currentGuess.join("");
+
       const result = this.checkGuess(guess);
       const currentRowIndex = this.currentRow;
 
@@ -882,12 +970,15 @@
     }
 
     updateRowColors(colors, rowIndex) {
+      const rowElement = document.getElementById(`row-${rowIndex}`);
+      if (!rowElement) return;
+
       for (let i = 0; i < colors.length; i++) {
         setTimeout(() => {
           const cell = document.getElementById(`cell-${rowIndex}-${i}`);
           if (cell) {
             cell.classList.remove(
-              "border-gray-600",
+              "border-border-color",
               "border-gray-400",
               "bg-correct",
               "bg-present",
@@ -917,34 +1008,49 @@
         );
 
         if (keyButton) {
-          const isCorrect = keyButton.classList.contains("correct");
-          const isPresent = keyButton.classList.contains("present");
+          const currentStatus = keyButton.classList.contains("correct")
+            ? "correct"
+            : keyButton.classList.contains("present")
+            ? "present"
+            : keyButton.classList.contains("absent")
+            ? "absent"
+            : "unknown";
 
+          let newStatus = currentStatus;
           if (status === "correct") {
-            keyButton.classList.remove(
-              "present",
-              "absent",
-              "bg-key-bg",
-              "hover:bg-key-hover",
-              "bg-present",
-              "bg-absent"
-            );
-            keyButton.classList.add("correct", "bg-correct");
-          } else if (status === "present" && !isCorrect) {
-            keyButton.classList.remove(
-              "absent",
-              "bg-key-bg",
-              "hover:bg-key-hover",
-              "bg-absent"
-            );
-            keyButton.classList.add("present", "bg-present");
-          } else if (status === "absent" && !isCorrect && !isPresent) {
-            keyButton.classList.remove("bg-key-bg", "hover:bg-key-hover");
-            keyButton.classList.add("absent", "bg-absent");
+            newStatus = "correct";
+          } else if (status === "present" && currentStatus !== "correct") {
+            newStatus = "present";
+          } else if (status === "absent" && currentStatus === "unknown") {
+            newStatus = "absent";
           }
 
-          if (status !== "absent") {
+          keyButton.classList.remove(
+            "correct",
+            "present",
+            "absent",
+            "bg-key-bg",
+            "hover:bg-key-hover",
+            "bg-correct",
+            "bg-present",
+            "bg-absent"
+          );
+          keyButton.classList.add(newStatus);
+
+          if (newStatus === "correct") keyButton.classList.add("bg-correct");
+          else if (newStatus === "present")
+            keyButton.classList.add("bg-present");
+          else if (newStatus === "absent") keyButton.classList.add("bg-absent");
+          else keyButton.classList.add("bg-key-bg", "hover:bg-key-hover");
+
+          if (
+            newStatus === "correct" ||
+            newStatus === "present" ||
+            newStatus === "absent"
+          ) {
             keyButton.classList.add("text-white");
+          } else {
+            keyButton.classList.remove("text-white");
           }
         }
       }
@@ -977,13 +1083,7 @@
         const unlockedAchievements = this.checkAchievements();
         updateAchievementsDisplayGlobal(this.achievements);
 
-        let message = `🎉 You guessed the word: ${this.targetWord}! Score: ${currentScore}.`;
-
-        if (unlockedAchievements.length > 0) {
-          message += `\n🏆 Achievement${
-            unlockedAchievements.length > 1 ? "s" : ""
-          } unlocked!`;
-        }
+        let message = `🎉 You guessed the word: **${this.targetWord}**! Score: ${currentScore}.`;
 
         try {
           await this.updateSupabaseStats(currentScore);
@@ -993,17 +1093,22 @@
             )
           );
           await loadAndDisplayInitialData();
+
+          const updatedStats = await this.fetchSupabaseStats();
+          message = `🎉 You guessed it: **${this.targetWord}**! Score: ${currentScore}. Total Score: ${updatedStats.totalScore}.`;
+
+          if (unlockedAchievements.length > 0) {
+            const achievementNames = unlockedAchievements
+              .map((a) => a.name)
+              .join(", ");
+            message += `\n🏆 Achievement${
+              unlockedAchievements.length > 1 ? "s" : ""
+            } unlocked: ${achievementNames}!`;
+          }
         } catch (err) {
           console.error("Error saving win results:", err);
           showToast("Error saving your results online.");
           message += "\n(Failed to save score online)";
-        }
-        const updatedStats = await this.fetchSupabaseStats();
-        message = `🎉 You guessed the word: ${this.targetWord}! Score: ${currentScore}. Total Score: ${updatedStats.totalScore}.`;
-        if (unlockedAchievements.length > 0) {
-          message += `\n🏆 Achievement${
-            unlockedAchievements.length > 1 ? "s" : ""
-          } unlocked!`;
         }
         this.showMessage("Congratulations!", message);
       } else {
@@ -1012,7 +1117,7 @@
         updateStatisticsDisplayGlobal(null);
         updateAchievementsDisplayGlobal(null);
 
-        let message = `🎉 You guessed it: ${this.targetWord}! Score: ${currentScore}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save your progress and compete!`;
+        let message = `🎉 You guessed it: **${this.targetWord}**! Score: ${currentScore}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save progress and compete!`;
         this.showMessage("You Won!", message, true);
       }
 
@@ -1033,18 +1138,22 @@
         try {
           await this.updateSupabaseStats(currentScore);
           await loadAndDisplayInitialData();
+
+          const updatedStats = await this.fetchSupabaseStats();
+          let message = `😥 The word was: **${this.targetWord}**. Total Score: ${updatedStats.totalScore}. Better luck next time!`;
+          this.showMessage("Game Over", message);
         } catch (err) {
           console.error("Error updating stats on loss:", err);
           showToast("Error saving game stats.");
+          let message = `😥 The word was: **${this.targetWord}**. Failed to save stats. Better luck next time!`;
+          this.showMessage("Game Over", message);
         }
-        const updatedStats = await this.fetchSupabaseStats();
-        let message = `😥 The word was: ${this.targetWord}. Total Score: ${updatedStats.totalScore}. Better luck next time!`;
-        this.showMessage("Game Over", message);
       } else {
         updateStatisticsDisplayGlobal(null);
         updateAchievementsDisplayGlobal(null);
         await loadAndDisplayInitialData();
-        let message = `😥 The word was: ${this.targetWord}. Score: ${this.score}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save your progress!`;
+
+        let message = `😥 The word was: **${this.targetWord}**. Score: 0.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save your progress!`;
         this.showMessage("Game Over", message, true);
       }
 
@@ -1070,20 +1179,25 @@
           .eq("user_id", this.userId)
           .maybeSingle();
 
-        if (error && status !== 406) throw error;
+        if (error && status !== 406) {
+          console.error("Error fetching Supabase stats:", error);
+          throw error;
+        }
 
         return data
           ? {
               totalGamesPlayed: data.total_games_played || 0,
               totalWins: data.total_wins || 0,
               hardModeWins: data.hard_mode_wins || 0,
-              categoriesWon: new Set(data.categories_won || []),
+              categoriesWon: new Set(
+                Array.isArray(data.categories_won) ? data.categories_won : []
+              ),
               totalScore: data.total_score || 0,
             }
           : defaultStats;
       } catch (e) {
-        console.error("Error fetching Supabase stats:", e);
-        throw e;
+        console.error("Exception fetching Supabase stats:", e);
+        return defaultStats;
       }
     }
 
@@ -1094,8 +1208,12 @@
       const winsIncrement = this.gameWon ? 1 : 0;
       const hardWinsIncrement =
         this.gameWon && this.difficulty === "hard" ? 1 : 0;
-      const finalScoreIncrement = this.gameWon ? scoreIncrement : 0;
-      const categoriesToSet = Array.from(this.playerStats.categoriesWon || []);
+      const finalScoreIncrement = scoreIncrement;
+      const categoriesToSet = Array.from(
+        this.playerStats.categoriesWon instanceof Set
+          ? this.playerStats.categoriesWon
+          : []
+      );
 
       try {
         console.log("Calling update_game_stats RPC with:", {
@@ -1164,6 +1282,7 @@
 
       if (error && error.code !== "23505") {
         console.error(`Error unlocking achievement ${achievement.id}:`, error);
+        showToast(`Failed to save achievement: ${achievement.name}`, 4000);
       } else if (!error) {
         console.log(`Achievement ${achievement.id} unlocked successfully.`);
       }
@@ -1172,7 +1291,9 @@
     loadData(key, defaultValue) {
       try {
         const data = localStorage.getItem(key);
-        if (data) return JSON.parse(data);
+        if (data) {
+          return JSON.parse(data);
+        }
       } catch (e) {
         console.error(`Error loading data for key ${key}:`, e);
       }
@@ -1183,6 +1304,7 @@
         localStorage.setItem(key, JSON.stringify(data));
       } catch (e) {
         console.error(`Error saving data for key ${key}:`, e);
+        showToast(`Error saving local data for ${key}. Storage might be full.`);
       }
     }
 
@@ -1194,16 +1316,21 @@
         name: this.playerName || "Guest",
         score: this.score,
         isGuest: true,
+        timestamp: Date.now(),
       });
 
-      leaderboard.sort((a, b) => b.score - a.score);
+      leaderboard.sort(
+        (a, b) => b.score - a.score || a.timestamp - b.timestamp
+      );
+
       const topLeaderboard = leaderboard.slice(0, CONFIG.LEADERBOARD_SIZE);
 
       this.saveData("wordleLeaderboard", topLeaderboard);
+      console.log("Guest score added to local leaderboard:", this.score);
     }
 
     checkAchievements() {
-      if (!this.userId) return [];
+      if (!this.userId || !this.gameWon) return [];
 
       const self = this;
       const newlyUnlocked = [];
@@ -1213,28 +1340,24 @@
           let conditionMet = false;
           switch (achievement.id) {
             case ACHIEVEMENTS.FIRST_VICTORY.id:
-              conditionMet = self.gameWon && self.playerStats.totalWins === 1;
+              conditionMet = self.playerStats.totalWins === 1;
               break;
             case ACHIEVEMENTS.PERFECT_GAME.id:
-              conditionMet = self.gameWon && self.currentRow === 0;
+              conditionMet = self.currentRow === 0;
               break;
             case ACHIEVEMENTS.HARD_MODE_MASTER.id:
-              conditionMet = self.gameWon && self.difficulty === "hard";
+              conditionMet = self.difficulty === "hard";
               break;
             case ACHIEVEMENTS.CATEGORY_CHAMPION.id:
               const allCategories = Object.keys(WORDS);
-              conditionMet =
-                self.gameWon &&
-                allCategories.every((cat) =>
-                  self.playerStats.categoriesWon.has(cat)
-                );
+              conditionMet = allCategories.every((cat) =>
+                self.playerStats.categoriesWon.has(cat)
+              );
               break;
             case ACHIEVEMENTS.TIME_MASTER.id:
               const timeThreshold = Math.floor(CONFIG.HARD_MODE_DURATION / 2);
               conditionMet =
-                self.gameWon &&
-                self.difficulty === "hard" &&
-                self.timeLeft >= timeThreshold;
+                self.difficulty === "hard" && self.timeLeft >= timeThreshold;
               break;
           }
 
@@ -1252,45 +1375,49 @@
 
     updateTimerDisplay() {
       const timerElement = this.rightInfoArea?.querySelector("#timer");
-      if (!timerElement) return;
+      const mobileTimerElement = this.mobileTimerDisplay;
 
+      if (!timerElement && !mobileTimerElement) return;
+
+      let timerText = "-";
       if (this.difficulty === "hard" && this.timeLeft !== null) {
-        timerElement.textContent = `${this.timeLeft}s`;
+        timerText = `${this.timeLeft}s`;
+      }
+
+      if (timerElement) {
+        timerElement.textContent = timerText;
         timerElement.classList.toggle(
           "text-red-500",
           this.timeLeft <= 10 && this.timeLeft > 0
         );
         timerElement.classList.toggle(
           "text-text-secondary",
-          this.timeLeft > 10
+          this.timeLeft > 10 || this.timeLeft === null
         );
-
-        if (this.mobileTimerDisplay) {
-          this.mobileTimerDisplay.textContent = timerElement.textContent;
-        }
-      } else {
-        timerElement.textContent = "-";
-        if (this.mobileTimerDisplay) {
-          this.mobileTimerDisplay.textContent = timerElement.textContent;
-        }
+      }
+      if (mobileTimerElement) {
+        mobileTimerElement.textContent = timerText;
       }
     }
 
     updateDifficultyDisplay() {
       const difficultyElement =
         this.rightInfoArea?.querySelector("#difficulty-mode");
-      if (difficultyElement) {
-        const difficultyText =
-          this.difficulty === "easy" ? `Easy Mode` : `Hard Mode`;
-        difficultyElement.textContent = difficultyText;
-        difficultyElement.className = `text-base font-medium ${
-          this.difficulty === "hard" ? "text-red-400" : "text-green-400"
-        }`;
+      const mobileDifficultyElement = this.mobileDifficultyDisplay;
 
-        if (this.mobileDifficultyDisplay) {
-          this.mobileDifficultyDisplay.textContent =
-            this.difficulty === "easy" ? `Easy` : `Hard`;
-        }
+      if (!difficultyElement && !mobileDifficultyElement) return;
+
+      const isHard = this.difficulty === "hard";
+      const difficultyText = isHard ? `Hard Mode` : `Easy Mode`;
+      const mobileDifficultyText = isHard ? `Hard` : `Easy`;
+      const colorClass = isHard ? "text-red-400" : "text-green-400";
+
+      if (difficultyElement) {
+        difficultyElement.textContent = difficultyText;
+        difficultyElement.className = `text-base font-medium ${colorClass}`;
+      }
+      if (mobileDifficultyElement) {
+        mobileDifficultyElement.textContent = mobileDifficultyText;
       }
     }
 
@@ -1302,11 +1429,18 @@
     updateCategoryDisplay() {
       const categoryDisplayElement =
         this.rightInfoArea?.querySelector("#category-display");
-      if (categoryDisplayElement && this.mobileCategoryDisplay) {
-        const capitalizedCategory =
-          this.category.charAt(0).toUpperCase() + this.category.slice(1);
+      const mobileCategoryElement = this.mobileCategoryDisplay;
+
+      if (!categoryDisplayElement && !mobileCategoryElement) return;
+
+      const capitalizedCategory =
+        this.category.charAt(0).toUpperCase() + this.category.slice(1);
+
+      if (categoryDisplayElement) {
         categoryDisplayElement.textContent = capitalizedCategory;
-        this.mobileCategoryDisplay.textContent = capitalizedCategory;
+      }
+      if (mobileCategoryElement) {
+        mobileCategoryElement.textContent = capitalizedCategory;
       }
     }
 
@@ -1328,9 +1462,12 @@
 
       messageTitle.textContent = title;
       if (allowHtml) {
-        messageText.innerHTML = text;
+        messageText.innerHTML = text.replace(
+          /\*\*(.*?)\*\*/g,
+          '<strong class="text-primary">$1</strong>'
+        );
       } else {
-        messageText.textContent = text;
+        messageText.textContent = text.replace(/\*\*/g, "");
       }
 
       const newGameButtonClone = newGameButton.cloneNode(true);
@@ -1386,19 +1523,28 @@
         const quitButton = document.getElementById("quit-btn");
         quitButton?.click();
       } else if (event.key === "Enter") {
-        const newGameButton = document.getElementById("new-game-btn");
-        newGameButton?.click();
+        if (document.activeElement !== document.getElementById("quit-btn")) {
+          const newGameButton = document.getElementById("new-game-btn");
+          newGameButton?.click();
+        }
       }
     }
 
     playSound(soundName) {
       const sound = this.sounds[soundName];
-      if (sound && sound.state() === "loaded") {
-        sound.play();
-      } else if (sound && sound.state() === "loading") {
-        sound.once("load", () => {
+      if (sound) {
+        if (sound.state() === "loaded") {
           sound.play();
-        });
+        } else if (sound.state() === "loading") {
+          sound.once("load", () => {
+            sound.play();
+          });
+        } else {
+          sound.load();
+          sound.once("load", () => {
+            sound.play();
+          });
+        }
       } else {
         console.warn(`Sound "${soundName}" not found or failed to load.`);
       }
@@ -1488,6 +1634,8 @@
         const focusableElements = Array.from(
           this.categoryModal.querySelectorAll("button")
         );
+        if (!focusableElements.length) return;
+
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
 
@@ -1605,6 +1753,8 @@
         const focusableElements = Array.from(
           this.difficultyModal.querySelectorAll("button")
         );
+        if (!focusableElements.length) return;
+
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
 
@@ -1644,11 +1794,27 @@
       this.resetGameState();
       this.createGameBoard();
       this.createKeyboard();
+      const keyboardDiv = this.gameCenterArea?.querySelector("#keyboard");
+      if (keyboardDiv) {
+        keyboardDiv.querySelectorAll("button.key").forEach((btn) => {
+          btn.classList.remove(
+            "correct",
+            "present",
+            "absent",
+            "bg-correct",
+            "bg-present",
+            "bg-absent",
+            "text-white"
+          );
+          btn.classList.add("bg-key-bg", "hover:bg-key-hover");
+        });
+      }
       this.updateScoreDisplay();
       this.updateTimerDisplay();
       this.updateDifficultyDisplay();
       this.updateCategoryDisplay();
       if (this.timeLeft !== null) this.startTimer();
+
       const messageBox = document.getElementById("message-box");
       if (messageBox) messageBox.classList.add("hidden");
       this.hideCategoryModal();
@@ -1667,7 +1833,7 @@
       this.timeLeft =
         this.difficulty === "hard" ? CONFIG.HARD_MODE_DURATION : null;
       this.score = 0;
-      this.guessedLetters = new Set();
+      this.guessedLetters.clear();
     }
 
     resetGameToMenu() {
@@ -1690,16 +1856,15 @@
         "keydown",
         this.boundHandleDifficultyModalKeyDown
       );
+      const messageBox = document.getElementById("message-box");
+      if (messageBox)
+        messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
 
       const keyboardElement = this.gameCenterArea?.querySelector("#keyboard");
       if (keyboardElement && keyboardElement._listener) {
         keyboardElement.removeEventListener("click", keyboardElement._listener);
         delete keyboardElement._listener;
       }
-
-      const messageBox = document.getElementById("message-box");
-      if (messageBox)
-        messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
 
       this.hideCategoryModal();
       this.hideDifficultyModal();
@@ -1716,6 +1881,8 @@
       cleanupButtonListener("change-difficulty-btn-ingame");
       cleanupButtonListener("change-category-btn-mobile");
       cleanupButtonListener("change-difficulty-btn-mobile");
+      cleanupButtonListener("new-game-btn");
+      cleanupButtonListener("quit-btn");
 
       console.log("WordleGame instance destroyed.");
     }
@@ -1725,6 +1892,11 @@
       this.updateTimerDisplay();
 
       this.timerInterval = setInterval(() => {
+        if (this.gameOver) {
+          clearInterval(this.timerInterval);
+          return;
+        }
+
         this.timeLeft--;
         this.updateTimerDisplay();
 
@@ -1764,6 +1936,7 @@
     } else {
       handleGuestState();
     }
+    loadAndDisplayInitialData();
   }
 
   function showGameView() {
@@ -1776,6 +1949,7 @@
       gameContainer.classList.remove("hidden");
       gameContainer.classList.add("flex");
     }
+    document.getElementById("sections-display-area")?.classList.add("hidden");
   }
 
   function hideAllSections() {
@@ -1784,7 +1958,8 @@
       Array.from(sectionsArea.children).forEach((child) => {
         if (
           child.id &&
-          (child.id.endsWith("-section") || child.id.endsWith("-btn"))
+          (child.id.endsWith("-section") ||
+            child.id === "back-to-menu-from-sections-btn")
         ) {
           child.classList.add("hidden");
         }
@@ -1816,7 +1991,11 @@
   }
 
   function showMenuFromSections() {
-    showWordleMenuView();
+    hideAllSections();
+    document.getElementById("main-menu-input-card")?.classList.remove("hidden");
+    document
+      .getElementById("menu-buttons-container")
+      ?.classList.remove("hidden");
   }
 
   document
@@ -1828,6 +2007,9 @@
 
   document.getElementById("start-game-btn")?.addEventListener("click", () => {
     if (currentGameInstance) {
+      console.warn(
+        "Destroying existing game instance before starting a new one."
+      );
       currentGameInstance.destroy();
       currentGameInstance = null;
     }
@@ -1844,7 +2026,7 @@
       localStorage.setItem("wordleGuestName", finalPlayerName);
     } else if (!currentUser) {
       finalPlayerName = "Guest";
-      localStorage.setItem("wordleGuestName", finalPlayerName);
+      localStorage.setItem("wordleGuestName", "Guest");
     }
 
     showGameView();
@@ -1858,6 +2040,7 @@
   });
 
   async function loadAndDisplayInitialData() {
+    console.log("Loading and displaying initial data...");
     let topPlayerData = null;
     if (_supabase) {
       try {
@@ -1892,27 +2075,13 @@
           .order("unlocked_at", { ascending: false })
           .limit(3);
 
-        if (error && error.code !== "42703") {
-          throw error;
-        } else if (error && error.code === "42703") {
-          console.warn(
-            "Column 'unlocked_at' might be missing or inaccessible. Fetching achievements without ordering."
-          );
-          const { data: fallbackData, error: fallbackError } = await _supabase
-            .from("achievements")
-            .select("achievement_id")
-            .eq("user_id", currentUser.id)
-            .limit(3);
-          if (fallbackError) throw fallbackError;
-          if (fallbackData) {
-            latestAchievementsData = fallbackData.map(
-              (a) => ACHIEVEMENTS[a.achievement_id]?.name || a.achievement_id
-            );
-          }
-        } else if (data) {
-          latestAchievementsData = data.map(
-            (a) => ACHIEVEMENTS[a.achievement_id]?.name || a.achievement_id
-          );
+        if (error) throw error;
+
+        if (data) {
+          latestAchievementsData = data.map((a) => ({
+            id: a.achievement_id,
+            name: ACHIEVEMENTS[a.achievement_id]?.name || a.achievement_id,
+          }));
         }
       } catch (e) {
         console.error("Error fetching latest achievements:", e);
@@ -1932,21 +2101,32 @@
 
   async function loadAndDisplayLeaderboard() {
     const leaderboardBody = document.getElementById("leaderboard-body");
+    const categoryFilter =
+      document.getElementById("leaderboard-category-filter")?.value || "all";
+    const difficultyFilter =
+      document.getElementById("leaderboard-difficulty-filter")?.value || "all";
+
     if (!leaderboardBody) return;
 
     leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-text-muted p-4">Loading leaderboard...</td></tr>`;
     let leaderboardData = [];
     let isLocal = false;
 
+    console.log(
+      `Fetching leaderboard. Filters (Category: ${categoryFilter}, Difficulty: ${difficultyFilter}) are UI only for now.`
+    );
+
     try {
       if (currentUser && _supabase) {
-        const { data, error } = await _supabase
+        let query = _supabase
           .from("game_stats")
           .select(
             `total_score, user_id, profile:profiles!inner(username, team)`
           )
           .order("total_score", { ascending: false })
           .limit(CONFIG.LEADERBOARD_SIZE);
+
+        const { data, error } = await query;
 
         if (error) throw error;
         leaderboardData = data || [];
@@ -1955,6 +2135,7 @@
         leaderboardData = JSON.parse(
           localStorage.getItem("wordleLeaderboard") || "[]"
         );
+        leaderboardData = leaderboardData.slice(0, CONFIG.LEADERBOARD_SIZE);
         isLocal = true;
       }
       updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
@@ -1964,6 +2145,7 @@
         leaderboardData = JSON.parse(
           localStorage.getItem("wordleLeaderboard") || "[]"
         );
+        leaderboardData = leaderboardData.slice(0, CONFIG.LEADERBOARD_SIZE);
         isLocal = true;
         updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
         if (currentUser)
@@ -1995,35 +2177,36 @@
       fragment.appendChild(row);
     } else {
       leaderboardData.forEach((entry, index) => {
+        const rank = index + 1;
         const displayName = isLocal
           ? entry.name || "Guest"
           : entry.profile?.username || "Unknown User";
         const score = isLocal ? entry.score : entry.total_score;
         const team = isLocal ? "N/A" : entry.profile?.team || "N/A";
+        const isCurrentUser =
+          !isLocal && currentUser && currentUser.id === entry.user_id;
 
         const row = document.createElement("tr");
-        row.className = index % 2 === 0 ? "bg-input-bg/50" : "";
+        row.className = `${index % 2 === 0 ? "bg-input-bg/50" : ""} ${
+          isCurrentUser ? "bg-primary/20 font-semibold" : ""
+        }`;
+
         row.innerHTML = `
-                  <td class="px-4 py-2 text-center">${index + 1}</td>
-                  <td class="px-4 py-2 font-medium ${
-                    currentUser && currentUser.id === entry.user_id
-                      ? "text-primary"
-                      : ""
-                  }">${displayName}${isLocal ? " (Guest)" : ""}</td>
-                  <td class="px-4 py-2 text-center font-semibold">${
-                    score || 0
-                  }</td>
-                  <td class="px-4 py-2 capitalize text-center ${
-                    team === "red"
-                      ? "text-red-400"
-                      : team === "blue"
-                      ? "text-blue-400"
-                      : ""
-                  }">${team}</td>
-              `;
-        if (!isLocal && currentUser && currentUser.id === entry.user_id) {
-          row.classList.add("bg-primary/20");
-        }
+                   <td class="px-4 py-2 text-center">${rank}</td>
+                   <td class="px-4 py-2 ${
+                     isCurrentUser ? "text-primary" : ""
+                   }">${displayName}${isLocal ? " (Guest)" : ""}</td>
+                   <td class="px-4 py-2 text-center font-semibold">${
+                     score || 0
+                   }</td>
+                   <td class="px-4 py-2 capitalize text-center ${
+                     team === "red"
+                       ? "text-red-400"
+                       : team === "blue"
+                       ? "text-blue-400"
+                       : ""
+                   }">${team}</td>
+               `;
         fragment.appendChild(row);
       });
     }
@@ -2048,7 +2231,9 @@
               totalGamesPlayed: data.total_games_played || 0,
               totalWins: data.total_wins || 0,
               hardModeWins: data.hard_mode_wins || 0,
-              categoriesWon: new Set(data.categories_won || []),
+              categoriesWon: new Set(
+                Array.isArray(data.categories_won) ? data.categories_won : []
+              ),
             }
           : {
               totalGamesPlayed: 0,
@@ -2171,23 +2356,23 @@
         }`;
         achievementDiv.setAttribute("role", "listitem");
         achievementDiv.innerHTML = `
-                  <div class="text-4xl mb-2 ${
-                    isUnlocked
-                      ? "text-yellow-400 filter grayscale-0"
-                      : "text-gray-500 filter grayscale"
-                  }">
-                      ${ach.icon}
-                      ${
-                        !isUnlocked
-                          ? '<span class="sr-only">(Locked)</span>'
-                          : '<span class="sr-only">(Unlocked)</span>'
-                      }
-                  </div>
-                  <h3 class="text-lg font-semibold mb-1 text-text-primary">${
-                    ach.name
-                  }</h3>
-                  <p class="text-sm text-text-muted">${ach.description}</p>
-              `;
+                   <div class="text-4xl mb-2 ${
+                     isUnlocked
+                       ? "text-yellow-400 filter grayscale-0"
+                       : "text-gray-500 filter grayscale"
+                   }">
+                       ${ach.icon}
+                       ${
+                         !isUnlocked
+                           ? '<span class="sr-only">(Locked)</span>'
+                           : '<span class="sr-only">(Unlocked)</span>'
+                       }
+                   </div>
+                   <h3 class="text-lg font-semibold mb-1 text-text-primary">${
+                     ach.name
+                   }</h3>
+                   <p class="text-sm text-text-muted">${ach.description}</p>
+               `;
         fragment.appendChild(achievementDiv);
       });
       achievementsList.appendChild(fragment);
@@ -2203,19 +2388,15 @@
 
   async function loadAndDisplayTeamLeaderboard() {
     const teamBody = document.getElementById("team-leaderboard-body");
-    if (!teamBody || !_supabase) {
-      if (teamBody)
-        teamBody.innerHTML =
-          '<tr><td colspan="2" class="text-center text-error py-4">Error: Could not load team data.</td></tr>';
-      return;
-    }
-    if (!currentUser) {
+    if (!teamBody) return;
+
+    if (!currentUser || !_supabase) {
       updateTeamLeaderboardDisplay(null);
       return;
     }
 
-    teamBody.innerHTML =
-      '<tr><td colspan="2" class="text-center text-text-muted py-4">Loading team scores...</td></tr>';
+    teamBody.innerHTML = `<tr><td colspan="2" class="text-center text-text-muted py-4">Loading team scores...</td></tr>`;
+
     try {
       const { data, error } = await _supabase
         .from("game_stats")
@@ -2259,21 +2440,19 @@
       }
 
       teamBody.innerHTML = `
-               <tr class="border-b border-border-color">
-                   <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td>
-                   <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td>
-               </tr>
-               <tr>
-                   <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td>
-                   <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td>
-               </tr>
-           `;
+                <tr class="border-b border-border-color">
+                    <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td>
+                    <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td>
+                    <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td>
+                </tr>
+            `;
     } else if (currentUser && teamScores === undefined) {
-      teamBody.innerHTML =
-        '<tr><td colspan="2" class="text-center text-error py-4">Error loading team scores.</td></tr>';
+      teamBody.innerHTML = `<tr><td colspan="2" class="text-center text-error py-4">Error loading team scores.</td></tr>`;
     } else {
-      teamBody.innerHTML =
-        '<tr><td colspan="2" class="text-center text-text-muted py-4"><a href="auth.html" class="text-primary hover:underline">Log in</a> to see team standings.</td></tr>';
+      teamBody.innerHTML = `<tr><td colspan="2" class="text-center text-text-muted py-4"><a href="auth.html" class="text-primary hover:underline">Log in</a> and join a team to see standings!</td></tr>`;
     }
   }
 
@@ -2283,4 +2462,5 @@
 
   window.showWordleMenuView = showWordleMenuView;
   window.showSection = showSection;
+  window.currentGameInstance = currentGameInstance;
 })();
