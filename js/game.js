@@ -280,9 +280,7 @@
     );
 
     const reloadLeaderboard = () => {
-      console.log(
-        "Leaderboard filters changed. Reloading leaderboard (Note: actual filtering is limited by current data structure)."
-      );
+      console.log("Leaderboard filters changed. Reloading leaderboard.");
       loadAndDisplayLeaderboard();
     };
 
@@ -359,7 +357,6 @@
     const teamLeaderboardBtn = document.getElementById(
       "dropdown-team-leaderboard-btn"
     );
-
     if (teamLeaderboardBtn) {
       teamLeaderboardBtn.classList.remove("hidden");
     }
@@ -380,7 +377,6 @@
       pni.placeholder = "Enter Your Name (Optional)";
     }
     if (lii) lii.classList.add("hidden");
-
     if (wm) wm.textContent = "Log in to save progress & compete!";
 
     updateUserStatusHeader();
@@ -502,7 +498,6 @@
     c.appendChild(t);
 
     t.offsetHeight;
-
     t.classList.add("show");
 
     setTimeout(() => {
@@ -556,21 +551,18 @@
         totalScore: 0,
       };
       this.achievements = {};
-
       this.boundHandleKeyDown = this.handleKeyDown.bind(this);
       this.boundHandleModalKeyDown = this.handleModalKeyDown.bind(this);
       this.boundHandleCategoryModalKeyDown =
         this.handleCategoryModalKeyDown.bind(this);
       this.boundHandleDifficultyModalKeyDown =
         this.handleDifficultyModalKeyDown.bind(this);
-
       this.gameContainer = document.getElementById("game-container");
       this.gameCenterArea = document.getElementById("game-center-area");
       this.rightInfoArea = document.getElementById("in-game-right-info");
       this.toastContainer = document.getElementById("toast-container");
       this.categoryModal = document.getElementById("category-modal");
       this.difficultyModal = document.getElementById("difficulty-modal");
-
       this.mobileCategoryDisplay = document.getElementById(
         "mobile-category-display"
       );
@@ -615,7 +607,6 @@
             teamTag = '<span class="text-red-400">(Red)</span>';
           else if (this.userProfileData.team === "blue")
             teamTag = '<span class="text-blue-400">(Blue)</span>';
-
           const displayText = `${
             this.userProfileData.username || "Player"
           } ${teamTag}`.trim();
@@ -682,7 +673,6 @@
         WORDS[this.category] && WORDS[this.category].length > 0
           ? WORDS[this.category]
           : WORDS.general;
-
       if (!wordList || wordList.length === 0) {
         console.error(
           `CRITICAL: No words found for category '${this.category}' or fallback 'general'!`
@@ -704,15 +694,12 @@
     createGameBoard() {
       const gameBoard = this.gameCenterArea?.querySelector("#game-board");
       if (!gameBoard) return;
-
       gameBoard.innerHTML = "";
       const fragment = document.createDocumentFragment();
-
       for (let r = 0; r < this.MAX_ATTEMPTS; r++) {
         const rowElement = document.createElement("div");
         rowElement.id = `row-${r}`;
         rowElement.className = "flex space-x-grid-gap";
-
         for (let c = 0; c < this.WORD_LENGTH; c++) {
           const cellElement = document.createElement("div");
           cellElement.id = `cell-${r}-${c}`;
@@ -732,14 +719,11 @@
       ];
       const keyboardContainer = this.gameCenterArea?.querySelector("#keyboard");
       if (!keyboardContainer) return;
-
       keyboardContainer.innerHTML = "";
       const fragment = document.createDocumentFragment();
-
       keyboardLayout.forEach((row) => {
         const rowElement = document.createElement("div");
         rowElement.className = "flex justify-center space-x-key-gap mb-2";
-
         row.forEach((key) => {
           const keyButton = document.createElement("button");
           keyButton.textContent = key;
@@ -751,7 +735,6 @@
           }`;
           if (key === "ENTER") keyButton.classList.add("key-enter");
           if (key === "⌫") keyButton.classList.add("key-backspace");
-
           rowElement.appendChild(keyButton);
         });
         fragment.appendChild(rowElement);
@@ -799,7 +782,6 @@
       setupButtonListener("change-difficulty-btn-ingame", () =>
         this.showDifficultyModal()
       );
-
       setupButtonListener("change-category-btn-mobile", () =>
         this.showCategoryModal()
       );
@@ -824,9 +806,7 @@
       ) {
         return;
       }
-
       const key = event.key.toUpperCase();
-
       if (/^[A-Z]$/.test(key)) {
         this.handleKeyPress(key);
       } else if (event.key === "Enter") {
@@ -834,17 +814,10 @@
       } else if (event.key === "Backspace") {
         this.handleKeyPress("⌫");
       }
-      if (
-        event.key === "Enter" ||
-        event.key === "Backspace" ||
-        /^[A-Z]$/.test(key)
-      ) {
-      }
     }
 
     handleKeyPress(key) {
       if (this.gameOver) return;
-
       if (key === "ENTER") {
         this.submitGuess();
       } else if (key === "⌫") {
@@ -860,12 +833,10 @@
           `cell-${this.currentRow}-${this.currentCol}`
         );
         if (!cell) return;
-
         cell.textContent = letter;
         cell.classList.add("scale-110", "border-gray-400");
         cell.classList.remove("border-border-color");
         setTimeout(() => cell.classList.remove("scale-110"), 100);
-
         this.currentGuess.push(letter);
         this.currentCol++;
         this.playSound("type");
@@ -879,11 +850,9 @@
           `cell-${this.currentRow}-${this.currentCol}`
         );
         if (!cell) return;
-
         cell.textContent = "";
         cell.classList.remove("border-gray-400");
         cell.classList.add("border-border-color");
-
         this.currentGuess.pop();
         this.playSound("type");
       }
@@ -898,7 +867,6 @@
       }
 
       const guess = this.currentGuess.join("");
-
       const result = this.checkGuess(guess);
       const currentRowIndex = this.currentRow;
 
@@ -965,14 +933,12 @@
 
       this.score = guessScore;
       this.updateScoreDisplay();
-
       return result;
     }
 
     updateRowColors(colors, rowIndex) {
       const rowElement = document.getElementById(`row-${rowIndex}`);
       if (!rowElement) return;
-
       for (let i = 0; i < colors.length; i++) {
         setTimeout(() => {
           const cell = document.getElementById(`cell-${rowIndex}-${i}`);
@@ -999,14 +965,12 @@
     updateKeyboardColors(guess, result) {
       const keyboardDiv = this.gameCenterArea?.querySelector("#keyboard");
       if (!keyboardDiv) return;
-
       for (let i = 0; i < guess.length; i++) {
         const letter = guess[i];
         const status = result[i];
         const keyButton = keyboardDiv.querySelector(
           `button[data-key="${letter}"]`
         );
-
         if (keyButton) {
           const currentStatus = keyButton.classList.contains("correct")
             ? "correct"
@@ -1015,7 +979,6 @@
             : keyButton.classList.contains("absent")
             ? "absent"
             : "unknown";
-
           let newStatus = currentStatus;
           if (status === "correct") {
             newStatus = "correct";
@@ -1024,7 +987,6 @@
           } else if (status === "absent" && currentStatus === "unknown") {
             newStatus = "absent";
           }
-
           keyButton.classList.remove(
             "correct",
             "present",
@@ -1036,13 +998,11 @@
             "bg-absent"
           );
           keyButton.classList.add(newStatus);
-
           if (newStatus === "correct") keyButton.classList.add("bg-correct");
           else if (newStatus === "present")
             keyButton.classList.add("bg-present");
           else if (newStatus === "absent") keyButton.classList.add("bg-absent");
           else keyButton.classList.add("bg-key-bg", "hover:bg-key-hover");
-
           if (
             newStatus === "correct" ||
             newStatus === "present" ||
@@ -1064,39 +1024,114 @@
       }
     }
 
+    async saveGameResultToSupabase() {
+      if (!this.userId || !_supabase) return;
+      const gameData = {
+        user_id: this.userId,
+        category: this.category,
+        difficulty: this.difficulty,
+        score: this.score,
+        won: this.gameWon,
+      };
+      try {
+        console.log("Saving individual game result:", gameData);
+        const { error } = await _supabase.from("game_results").insert(gameData);
+        if (error) {
+          console.error("Error saving individual game result:", error);
+          showToast("Error saving game details.", 3000);
+        } else {
+          console.log("Individual game result saved successfully.");
+        }
+      } catch (e) {
+        console.error("Exception saving individual game result:", e);
+        showToast("Error saving game details.", 3000);
+      }
+    }
+
+    async updateSupabaseAggregates(scoreIncrement = 0) {
+      if (!this.userId || !_supabase) return;
+      const gamesIncrement = 1;
+      const winsIncrement = this.gameWon ? 1 : 0;
+      const hardWinsIncrement =
+        this.gameWon && this.difficulty === "hard" ? 1 : 0;
+      const categoriesToSet = Array.from(
+        this.playerStats.categoriesWon instanceof Set
+          ? this.playerStats.categoriesWon
+          : []
+      );
+
+      let currentTotalScore = 0;
+      try {
+        const { data, error } = await _supabase
+          .from("game_stats")
+          .select("total_score")
+          .eq("user_id", this.userId)
+          .maybeSingle();
+        if (error && error.code !== "PGRST116") {
+          console.error("Error fetching current total score:", error);
+        } else if (data) {
+          currentTotalScore = data.total_score || 0;
+        }
+      } catch (e) {
+        console.error("Exception fetching current total score:", e);
+      }
+      const newTotalScore = currentTotalScore + scoreIncrement;
+
+      try {
+        const { error: rpcError } = await _supabase.rpc("update_game_stats", {
+          p_user_id: this.userId,
+          p_games_increment: gamesIncrement,
+          p_wins_increment: winsIncrement,
+          p_hard_wins_increment: hardWinsIncrement,
+          p_score_increment: scoreIncrement,
+          p_categories: categoriesToSet,
+        });
+        if (rpcError) {
+          console.error(
+            "Error calling update_game_stats RPC for aggregates:",
+            rpcError
+          );
+          throw rpcError;
+        } else {
+          console.log("Aggregate game stats updated successfully via RPC.");
+          this.playerStats.totalGamesPlayed += gamesIncrement;
+          this.playerStats.totalWins += winsIncrement;
+          if (this.gameWon) this.playerStats.categoriesWon.add(this.category);
+          if (this.gameWon && this.difficulty === "hard")
+            this.playerStats.hardModeWins += hardWinsIncrement;
+          this.playerStats.totalScore = newTotalScore;
+        }
+      } catch (e) {
+        console.error("Exception updating aggregate game stats:", e);
+        throw e;
+      }
+    }
+
     async handleWin() {
       if (this.gameOver) return;
       this.gameOver = true;
       this.gameWon = true;
       clearInterval(this.timerInterval);
-
       const currentScore = this.score;
 
       if (this.userId && _supabase) {
-        this.playerStats.totalGamesPlayed++;
-        this.playerStats.totalWins++;
-        this.playerStats.categoriesWon.add(this.category);
-        if (this.difficulty === "hard") this.playerStats.hardModeWins++;
-
-        updateStatisticsDisplayGlobal(this.playerStats);
-
-        const unlockedAchievements = this.checkAchievements();
-        updateAchievementsDisplayGlobal(this.achievements);
-
-        let message = `🎉 You guessed the word: **${this.targetWord}**! Score: ${currentScore}.`;
-
+        await this.saveGameResultToSupabase();
         try {
-          await this.updateSupabaseStats(currentScore);
+          this.playerStats.totalGamesPlayed++;
+          this.playerStats.totalWins++;
+          this.playerStats.categoriesWon.add(this.category);
+          if (this.difficulty === "hard") this.playerStats.hardModeWins++;
+          updateStatisticsDisplayGlobal(this.playerStats);
+          const unlockedAchievements = this.checkAchievements();
+          updateAchievementsDisplayGlobal(this.achievements);
+          await this.updateSupabaseAggregates(currentScore);
           await Promise.all(
             unlockedAchievements.map((ach) =>
               this.unlockSupabaseAchievement(ach)
             )
           );
           await loadAndDisplayInitialData();
-
-          const updatedStats = await this.fetchSupabaseStats();
-          message = `🎉 You guessed it: **${this.targetWord}**! Score: ${currentScore}. Total Score: ${updatedStats.totalScore}.`;
-
+          let message = `🎉 You guessed it: **${this.targetWord}**! Score: ${currentScore}. Total Score: ${this.playerStats.totalScore}.`;
           if (unlockedAchievements.length > 0) {
             const achievementNames = unlockedAchievements
               .map((a) => a.name)
@@ -1105,42 +1140,39 @@
               unlockedAchievements.length > 1 ? "s" : ""
             } unlocked: ${achievementNames}!`;
           }
+          this.showMessage("Congratulations!", message);
         } catch (err) {
           console.error("Error saving win results:", err);
           showToast("Error saving your results online.");
-          message += "\n(Failed to save score online)";
+          let message = `🎉 You guessed it: **${this.targetWord}**! Score: ${currentScore}.\n(Failed to save score online)`;
+          this.showMessage("Congratulations!", message);
         }
-        this.showMessage("Congratulations!", message);
       } else {
         this.addScoreToLocalGuestLeaderboard();
         await loadAndDisplayInitialData();
         updateStatisticsDisplayGlobal(null);
         updateAchievementsDisplayGlobal(null);
-
         let message = `🎉 You guessed it: **${this.targetWord}**! Score: ${currentScore}.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save progress and compete!`;
         this.showMessage("You Won!", message, true);
       }
-
       this.playSound("win");
     }
 
     async handleLose() {
       if (this.gameOver) return;
       this.gameOver = true;
+      this.gameWon = false;
+      this.score = 0;
       clearInterval(this.timerInterval);
 
       if (this.userId && _supabase) {
-        this.playerStats.totalGamesPlayed++;
-        const currentScore = 0;
-
-        updateStatisticsDisplayGlobal(this.playerStats);
-
+        await this.saveGameResultToSupabase();
         try {
-          await this.updateSupabaseStats(currentScore);
+          this.playerStats.totalGamesPlayed++;
+          updateStatisticsDisplayGlobal(this.playerStats);
+          await this.updateSupabaseAggregates(0);
           await loadAndDisplayInitialData();
-
-          const updatedStats = await this.fetchSupabaseStats();
-          let message = `😥 The word was: **${this.targetWord}**. Total Score: ${updatedStats.totalScore}. Better luck next time!`;
+          let message = `😥 The word was: **${this.targetWord}**. Total Score: ${this.playerStats.totalScore}. Better luck next time!`;
           this.showMessage("Game Over", message);
         } catch (err) {
           console.error("Error updating stats on loss:", err);
@@ -1152,11 +1184,9 @@
         updateStatisticsDisplayGlobal(null);
         updateAchievementsDisplayGlobal(null);
         await loadAndDisplayInitialData();
-
         let message = `😥 The word was: **${this.targetWord}**. Score: 0.\n<a href="auth.html" class="text-primary hover:underline">Sign up</a> or <a href="auth.html" class="text-primary hover:underline">Log in</a> to save your progress!`;
         this.showMessage("Game Over", message, true);
       }
-
       this.playSound("lose");
     }
 
@@ -1169,7 +1199,6 @@
         totalScore: 0,
       };
       if (!this.userId || !_supabase) return defaultStats;
-
       try {
         const { data, error, status } = await _supabase
           .from("game_stats")
@@ -1178,12 +1207,10 @@
           )
           .eq("user_id", this.userId)
           .maybeSingle();
-
         if (error && status !== 406) {
           console.error("Error fetching Supabase stats:", error);
           throw error;
         }
-
         return data
           ? {
               totalGamesPlayed: data.total_games_played || 0,
@@ -1201,66 +1228,18 @@
       }
     }
 
-    async updateSupabaseStats(scoreIncrement = 0) {
-      if (!this.userId || !_supabase) return;
-
-      const gamesIncrement = 1;
-      const winsIncrement = this.gameWon ? 1 : 0;
-      const hardWinsIncrement =
-        this.gameWon && this.difficulty === "hard" ? 1 : 0;
-      const finalScoreIncrement = scoreIncrement;
-      const categoriesToSet = Array.from(
-        this.playerStats.categoriesWon instanceof Set
-          ? this.playerStats.categoriesWon
-          : []
-      );
-
-      try {
-        console.log("Calling update_game_stats RPC with:", {
-          p_user_id: this.userId,
-          p_games_increment: gamesIncrement,
-          p_wins_increment: winsIncrement,
-          p_hard_wins_increment: hardWinsIncrement,
-          p_score_increment: finalScoreIncrement,
-          p_categories: categoriesToSet,
-        });
-
-        const { error } = await _supabase.rpc("update_game_stats", {
-          p_user_id: this.userId,
-          p_games_increment: gamesIncrement,
-          p_wins_increment: winsIncrement,
-          p_hard_wins_increment: hardWinsIncrement,
-          p_score_increment: finalScoreIncrement,
-          p_categories: categoriesToSet,
-        });
-
-        if (error) {
-          console.error("Error calling update_game_stats RPC:", error);
-          throw error;
-        } else {
-          console.log("Game stats updated successfully via RPC.");
-        }
-      } catch (e) {
-        console.error("Exception calling update_game_stats RPC:", e);
-        throw e;
-      }
-    }
-
     async fetchSupabaseAchievements() {
       const defaultAchievements = {};
       if (!this.userId || !_supabase) return defaultAchievements;
-
       try {
         const { data, error } = await _supabase
           .from("achievements")
           .select("achievement_id")
           .eq("user_id", this.userId);
-
         if (error) {
           console.error("Error fetching Supabase achievements:", error);
           throw error;
         }
-
         const achievementsMap = {};
         if (data)
           data.forEach((ach) => {
@@ -1275,11 +1254,9 @@
 
     async unlockSupabaseAchievement(achievement) {
       if (!this.userId || !_supabase || !achievement?.id) return;
-
       const { error } = await _supabase
         .from("achievements")
         .insert({ user_id: this.userId, achievement_id: achievement.id });
-
       if (error && error.code !== "23505") {
         console.error(`Error unlocking achievement ${achievement.id}:`, error);
         showToast(`Failed to save achievement: ${achievement.name}`, 4000);
@@ -1291,14 +1268,13 @@
     loadData(key, defaultValue) {
       try {
         const data = localStorage.getItem(key);
-        if (data) {
-          return JSON.parse(data);
-        }
+        if (data) return JSON.parse(data);
       } catch (e) {
         console.error(`Error loading data for key ${key}:`, e);
       }
       return defaultValue;
     }
+
     saveData(key, data) {
       try {
         localStorage.setItem(key, JSON.stringify(data));
@@ -1310,7 +1286,6 @@
 
     addScoreToLocalGuestLeaderboard() {
       if (this.userId) return;
-
       const leaderboard = this.loadData("wordleLeaderboard", []);
       leaderboard.push({
         name: this.playerName || "Guest",
@@ -1318,23 +1293,18 @@
         isGuest: true,
         timestamp: Date.now(),
       });
-
       leaderboard.sort(
         (a, b) => b.score - a.score || a.timestamp - b.timestamp
       );
-
       const topLeaderboard = leaderboard.slice(0, CONFIG.LEADERBOARD_SIZE);
-
       this.saveData("wordleLeaderboard", topLeaderboard);
       console.log("Guest score added to local leaderboard:", this.score);
     }
 
     checkAchievements() {
       if (!this.userId || !this.gameWon) return [];
-
       const self = this;
       const newlyUnlocked = [];
-
       const checkAchievement = (achievement) => {
         if (achievement && !self.achievements[achievement.id]) {
           let conditionMet = false;
@@ -1360,7 +1330,6 @@
                 self.difficulty === "hard" && self.timeLeft >= timeThreshold;
               break;
           }
-
           if (conditionMet) {
             self.achievements[achievement.id] = true;
             newlyUnlocked.push(achievement);
@@ -1368,7 +1337,6 @@
           }
         }
       };
-
       Object.values(ACHIEVEMENTS).forEach(checkAchievement);
       return newlyUnlocked;
     }
@@ -1376,14 +1344,11 @@
     updateTimerDisplay() {
       const timerElement = this.rightInfoArea?.querySelector("#timer");
       const mobileTimerElement = this.mobileTimerDisplay;
-
       if (!timerElement && !mobileTimerElement) return;
-
       let timerText = "-";
       if (this.difficulty === "hard" && this.timeLeft !== null) {
         timerText = `${this.timeLeft}s`;
       }
-
       if (timerElement) {
         timerElement.textContent = timerText;
         timerElement.classList.toggle(
@@ -1404,14 +1369,11 @@
       const difficultyElement =
         this.rightInfoArea?.querySelector("#difficulty-mode");
       const mobileDifficultyElement = this.mobileDifficultyDisplay;
-
       if (!difficultyElement && !mobileDifficultyElement) return;
-
       const isHard = this.difficulty === "hard";
       const difficultyText = isHard ? `Hard Mode` : `Easy Mode`;
       const mobileDifficultyText = isHard ? `Hard` : `Easy`;
       const colorClass = isHard ? "text-red-400" : "text-green-400";
-
       if (difficultyElement) {
         difficultyElement.textContent = difficultyText;
         difficultyElement.className = `text-base font-medium ${colorClass}`;
@@ -1430,12 +1392,9 @@
       const categoryDisplayElement =
         this.rightInfoArea?.querySelector("#category-display");
       const mobileCategoryElement = this.mobileCategoryDisplay;
-
       if (!categoryDisplayElement && !mobileCategoryElement) return;
-
       const capitalizedCategory =
         this.category.charAt(0).toUpperCase() + this.category.slice(1);
-
       if (categoryDisplayElement) {
         categoryDisplayElement.textContent = capitalizedCategory;
       }
@@ -1450,7 +1409,6 @@
       const messageText = document.getElementById("message-text");
       const newGameButton = document.getElementById("new-game-btn");
       const quitButton = document.getElementById("quit-btn");
-
       if (
         !messageBox ||
         !messageTitle ||
@@ -1472,13 +1430,11 @@
 
       const newGameButtonClone = newGameButton.cloneNode(true);
       newGameButton.parentNode.replaceChild(newGameButtonClone, newGameButton);
-
       const quitButtonClone = quitButton.cloneNode(true);
       quitButton.parentNode.replaceChild(quitButtonClone, quitButton);
 
       messageBox.classList.remove("hidden");
       newGameButtonClone.focus();
-
       messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
       messageBox.addEventListener("keydown", this.boundHandleModalKeyDown);
 
@@ -1501,13 +1457,10 @@
       if (event.key === "Tab") {
         const messageBox = document.getElementById("message-box");
         if (!messageBox) return;
-
         const focusableElements = messageBox.querySelectorAll("button");
         if (!focusableElements.length) return;
-
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
-
         if (event.shiftKey) {
           if (document.activeElement === firstElement) {
             lastElement.focus();
@@ -1552,7 +1505,6 @@
 
     showCategoryModal() {
       if (!this.categoryModal) return;
-
       const optionsContainer = this.categoryModal.querySelector(
         "#category-options-container"
       );
@@ -1560,38 +1512,31 @@
         "#cancel-category-change-btn"
       );
       if (!optionsContainer || !cancelBtn) return;
-
       optionsContainer.innerHTML = "";
-
       Object.keys(WORDS).forEach((categoryKey) => {
         const button = document.createElement("button");
         button.textContent =
           categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1);
         button.dataset.category = categoryKey;
         button.className = `bg-input-bg hover:bg-key-bg text-text-secondary font-medium py-2 px-3 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50`;
-
         if (categoryKey === this.category) {
           button.disabled = true;
           button.classList.add("opacity-50", "cursor-not-allowed");
           button.classList.remove("hover:bg-key-bg");
         }
-
         button.addEventListener("click", () => {
           this.changeCategoryAndRestart(categoryKey);
           this.hideCategoryModal();
         });
         optionsContainer.appendChild(button);
       });
-
       const newCancelBtn = cancelBtn.cloneNode(true);
       cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
       newCancelBtn.addEventListener("click", () => this.hideCategoryModal(), {
         once: true,
       });
-
       this.categoryModal.classList.remove("hidden");
       this.categoryModal.focus();
-
       document.removeEventListener(
         "keydown",
         this.boundHandleCategoryModalKeyDown
@@ -1600,7 +1545,6 @@
         "keydown",
         this.boundHandleCategoryModalKeyDown
       );
-
       const firstButton = optionsContainer.querySelector(
         "button:not([disabled])"
       );
@@ -1626,7 +1570,6 @@
         this.categoryModal.classList.contains("hidden")
       )
         return;
-
       if (event.key === "Escape") {
         event.preventDefault();
         this.hideCategoryModal();
@@ -1635,10 +1578,8 @@
           this.categoryModal.querySelectorAll("button")
         );
         if (!focusableElements.length) return;
-
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
-
         if (event.shiftKey) {
           if (document.activeElement === firstElement) {
             lastElement.focus();
@@ -1655,7 +1596,6 @@
 
     changeCategoryAndRestart(newCategory) {
       if (this.category === newCategory) return;
-
       console.log(`Changing category from ${this.category} to ${newCategory}`);
       this.category = newCategory;
       this.updateCategoryDisplay();
@@ -1665,13 +1605,11 @@
         }. New game starting!`,
         3500
       );
-
       this.restartGame();
     }
 
     showDifficultyModal() {
       if (!this.difficultyModal) return;
-
       const optionsContainer = this.difficultyModal.querySelector(
         "#difficulty-options-container"
       );
@@ -1679,38 +1617,31 @@
         "#cancel-difficulty-change-btn"
       );
       if (!optionsContainer || !cancelBtn) return;
-
       optionsContainer.innerHTML = "";
       const difficulties = ["easy", "hard"];
-
       difficulties.forEach((diffKey) => {
         const button = document.createElement("button");
         button.textContent = diffKey.charAt(0).toUpperCase() + diffKey.slice(1);
         button.dataset.difficulty = diffKey;
         button.className = `w-full bg-input-bg hover:bg-key-bg text-text-secondary font-medium py-3 px-4 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50`;
-
         if (diffKey === this.difficulty) {
           button.disabled = true;
           button.classList.add("opacity-50", "cursor-not-allowed");
           button.classList.remove("hover:bg-key-bg");
         }
-
         button.addEventListener("click", () => {
           this.changeDifficultyAndRestart(diffKey);
           this.hideDifficultyModal();
         });
         optionsContainer.appendChild(button);
       });
-
       const newCancelBtn = cancelBtn.cloneNode(true);
       cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
       newCancelBtn.addEventListener("click", () => this.hideDifficultyModal(), {
         once: true,
       });
-
       this.difficultyModal.classList.remove("hidden");
       this.difficultyModal.focus();
-
       document.removeEventListener(
         "keydown",
         this.boundHandleDifficultyModalKeyDown
@@ -1719,7 +1650,6 @@
         "keydown",
         this.boundHandleDifficultyModalKeyDown
       );
-
       const firstButton = optionsContainer.querySelector(
         "button:not([disabled])"
       );
@@ -1745,7 +1675,6 @@
         this.difficultyModal.classList.contains("hidden")
       )
         return;
-
       if (event.key === "Escape") {
         event.preventDefault();
         this.hideDifficultyModal();
@@ -1754,10 +1683,8 @@
           this.difficultyModal.querySelectorAll("button")
         );
         if (!focusableElements.length) return;
-
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
-
         if (event.shiftKey) {
           if (document.activeElement === firstElement) {
             lastElement.focus();
@@ -1774,7 +1701,6 @@
 
     changeDifficultyAndRestart(newDifficulty) {
       if (this.difficulty === newDifficulty) return;
-
       console.log(
         `Changing difficulty from ${this.difficulty} to ${newDifficulty}`
       );
@@ -1786,7 +1712,6 @@
         }. New game starting!`,
         3500
       );
-
       this.restartGame();
     }
 
@@ -1814,7 +1739,6 @@
       this.updateDifficultyDisplay();
       this.updateCategoryDisplay();
       if (this.timeLeft !== null) this.startTimer();
-
       const messageBox = document.getElementById("message-box");
       if (messageBox) messageBox.classList.add("hidden");
       this.hideCategoryModal();
@@ -1846,7 +1770,6 @@
 
     destroy() {
       clearInterval(this.timerInterval);
-
       document.removeEventListener("keydown", this.boundHandleKeyDown);
       document.removeEventListener(
         "keydown",
@@ -1859,16 +1782,13 @@
       const messageBox = document.getElementById("message-box");
       if (messageBox)
         messageBox.removeEventListener("keydown", this.boundHandleModalKeyDown);
-
       const keyboardElement = this.gameCenterArea?.querySelector("#keyboard");
       if (keyboardElement && keyboardElement._listener) {
         keyboardElement.removeEventListener("click", keyboardElement._listener);
         delete keyboardElement._listener;
       }
-
       this.hideCategoryModal();
       this.hideDifficultyModal();
-
       const cleanupButtonListener = (buttonId) => {
         const button = document.getElementById(buttonId);
         if (button) {
@@ -1883,23 +1803,19 @@
       cleanupButtonListener("change-difficulty-btn-mobile");
       cleanupButtonListener("new-game-btn");
       cleanupButtonListener("quit-btn");
-
       console.log("WordleGame instance destroyed.");
     }
 
     startTimer() {
       clearInterval(this.timerInterval);
       this.updateTimerDisplay();
-
       this.timerInterval = setInterval(() => {
         if (this.gameOver) {
           clearInterval(this.timerInterval);
           return;
         }
-
         this.timeLeft--;
         this.updateTimerDisplay();
-
         if (this.timeLeft <= 0) {
           clearInterval(this.timerInterval);
           if (!this.gameOver) {
@@ -1915,10 +1831,8 @@
     console.log("Showing Wordle Menu View");
     const menuContainer = document.getElementById("menu-container");
     const gameContainer = document.getElementById("game-container");
-
     if (menuContainer) menuContainer.classList.remove("hidden");
     if (gameContainer) gameContainer.classList.add("hidden");
-
     document
       .getElementById("sections-display-area")
       ?.classList.remove("hidden");
@@ -1930,7 +1844,6 @@
     document
       .getElementById("back-to-menu-from-sections-btn")
       ?.classList.add("hidden");
-
     if (currentUser) {
       handleLoggedInState();
     } else {
@@ -1943,7 +1856,6 @@
     console.log("Showing Game View");
     const menuContainer = document.getElementById("menu-container");
     const gameContainer = document.getElementById("game-container");
-
     if (menuContainer) menuContainer.classList.add("hidden");
     if (gameContainer) {
       gameContainer.classList.remove("hidden");
@@ -1969,20 +1881,15 @@
 
   function showSection(sectionId) {
     showWordleMenuView();
-
     document.getElementById("main-menu-input-card")?.classList.add("hidden");
     document.getElementById("menu-buttons-container")?.classList.add("hidden");
-
     hideAllSections();
-
     const sectionToShow = document.getElementById(sectionId);
     const backButton = document.getElementById(
       "back-to-menu-from-sections-btn"
     );
-
     if (sectionToShow) sectionToShow.classList.remove("hidden");
     if (backButton) backButton.classList.remove("hidden");
-
     if (sectionId === "leaderboard-section") loadAndDisplayLeaderboard();
     else if (sectionId === "statistics-section") loadAndDisplayStatistics();
     else if (sectionId === "achievements-section") loadAndDisplayAchievements();
@@ -2017,7 +1924,6 @@
     let playerNameFromInput = nameInput ? nameInput.value.trim() : null;
     const difficulty = document.getElementById("difficulty")?.value || "easy";
     const category = document.getElementById("category")?.value || "general";
-
     let finalPlayerName = "Guest";
     if (currentUser && userProfile?.username) {
       finalPlayerName = userProfile.username;
@@ -2028,7 +1934,6 @@
       finalPlayerName = "Guest";
       localStorage.setItem("wordleGuestName", "Guest");
     }
-
     showGameView();
     currentGameInstance = new WordleGame(
       finalPlayerName,
@@ -2050,7 +1955,6 @@
           .order("total_score", { ascending: false })
           .limit(1)
           .maybeSingle();
-
         if (error) throw error;
         if (data) {
           topPlayerData = {
@@ -2074,9 +1978,7 @@
           .eq("user_id", currentUser.id)
           .order("unlocked_at", { ascending: false })
           .limit(3);
-
         if (error) throw error;
-
         if (data) {
           latestAchievementsData = data.map((a) => ({
             id: a.achievement_id,
@@ -2095,7 +1997,6 @@
       loadAndDisplayAchievements(),
       loadAndDisplayTeamLeaderboard(),
     ]);
-
     updateSidebarButtonsVisibility();
   }
 
@@ -2105,56 +2006,131 @@
       document.getElementById("leaderboard-category-filter")?.value || "all";
     const difficultyFilter =
       document.getElementById("leaderboard-difficulty-filter")?.value || "all";
+    const leaderboardTitle = document.querySelector("#leaderboard-section h2");
 
     if (!leaderboardBody) return;
-
     leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-text-muted p-4">Loading leaderboard...</td></tr>`;
     let leaderboardData = [];
     let isLocal = false;
+    let queryError = null;
+
+    if (leaderboardTitle) {
+      let titleText = "Global Leaderboard";
+      if (categoryFilter !== "all" && difficultyFilter === "all") {
+        titleText = `Leaderboard - ${
+          categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)
+        }`;
+      } else if (categoryFilter === "all" && difficultyFilter !== "all") {
+        titleText = `Leaderboard - ${
+          difficultyFilter.charAt(0).toUpperCase() + difficultyFilter.slice(1)
+        } Mode`;
+      } else if (categoryFilter !== "all" && difficultyFilter !== "all") {
+        titleText = `Leaderboard - ${
+          categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)
+        } (${
+          difficultyFilter.charAt(0).toUpperCase() + difficultyFilter.slice(1)
+        })`;
+      }
+      leaderboardTitle.textContent = titleText;
+    }
 
     console.log(
-      `Fetching leaderboard. Filters (Category: ${categoryFilter}, Difficulty: ${difficultyFilter}) are UI only for now.`
+      `Fetching leaderboard. Filters (Category: ${categoryFilter}, Difficulty: ${difficultyFilter})`
     );
-
     try {
       if (currentUser && _supabase) {
-        let query = _supabase
-          .from("game_stats")
-          .select(
-            `total_score, user_id, profile:profiles!inner(username, team)`
-          )
-          .order("total_score", { ascending: false })
-          .limit(CONFIG.LEADERBOARD_SIZE);
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-        leaderboardData = data || [];
+        let query;
+        if (categoryFilter === "all" && difficultyFilter === "all") {
+          console.log("Fetching global leaderboard from game_stats");
+          query = _supabase
+            .from("game_stats")
+            .select(
+              `total_score, user_id, profile:profiles!inner(username, team)`
+            )
+            .order("total_score", { ascending: false })
+            .limit(CONFIG.LEADERBOARD_SIZE);
+          const { data, error } = await query;
+          if (error) throw error;
+          leaderboardData = (data || []).map((item) => ({
+            user_id: item.user_id,
+            profile: item.profile,
+            score: item.total_score,
+          }));
+        } else {
+          console.log("Fetching filtered leaderboard from game_results");
+          query = _supabase
+            .from("game_results")
+            .select(
+              `user_id, score:score, profile:profiles!inner(username, team)`
+            );
+          if (categoryFilter !== "all") {
+            query = query.eq("category", categoryFilter);
+          }
+          if (difficultyFilter !== "all") {
+            query = query.eq("difficulty", difficultyFilter);
+          }
+          const { data: resultsData, error: resultsError } = await query;
+          if (resultsError) throw resultsError;
+          const userScores = {};
+          (resultsData || []).forEach((result) => {
+            if (!userScores[result.user_id]) {
+              userScores[result.user_id] = {
+                user_id: result.user_id,
+                profile: result.profile,
+                score: 0,
+              };
+            }
+            userScores[result.user_id].score += result.score;
+          });
+          leaderboardData = Object.values(userScores)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, CONFIG.LEADERBOARD_SIZE);
+        }
         isLocal = false;
       } else {
+        console.log("Fetching guest leaderboard from localStorage");
         leaderboardData = JSON.parse(
           localStorage.getItem("wordleLeaderboard") || "[]"
         );
-        leaderboardData = leaderboardData.slice(0, CONFIG.LEADERBOARD_SIZE);
+        leaderboardData = leaderboardData
+          .slice(0, CONFIG.LEADERBOARD_SIZE)
+          .map((item) => ({ ...item, score: item.score }));
         isLocal = true;
+        if (leaderboardTitle)
+          leaderboardTitle.textContent = "Guest Leaderboard";
       }
       updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
     } catch (e) {
       console.error("Error loading leaderboard:", e);
-      try {
-        leaderboardData = JSON.parse(
-          localStorage.getItem("wordleLeaderboard") || "[]"
-        );
-        leaderboardData = leaderboardData.slice(0, CONFIG.LEADERBOARD_SIZE);
-        isLocal = true;
-        updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
-        if (currentUser)
+      queryError = e;
+      if (currentUser) {
+        try {
+          leaderboardData = JSON.parse(
+            localStorage.getItem("wordleLeaderboard") || "[]"
+          );
+          leaderboardData = leaderboardData
+            .slice(0, CONFIG.LEADERBOARD_SIZE)
+            .map((item) => ({ ...item, score: item.score }));
+          isLocal = true;
+          updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
           showToast(
             "Failed to load online leaderboard. Showing local guest scores."
           );
-      } catch (localError) {
-        console.error("Error loading local leaderboard:", localError);
-        leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-error p-4">Failed to load leaderboard.</td></tr>`;
+          if (leaderboardTitle)
+            leaderboardTitle.textContent = "Guest Leaderboard (Offline)";
+        } catch (localError) {
+          console.error(
+            "Error loading local leaderboard fallback:",
+            localError
+          );
+          leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-error p-4">Failed to load leaderboard. ${
+            queryError?.message || ""
+          }</td></tr>`;
+        }
+      } else {
+        leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-error p-4">Failed to load leaderboard. ${
+          queryError?.message || ""
+        }</td></tr>`;
       }
     }
   }
@@ -2165,15 +2141,27 @@
   ) {
     const leaderboardBody = document.getElementById("leaderboard-body");
     if (!leaderboardBody) return;
-
     leaderboardBody.innerHTML = "";
     const fragment = document.createDocumentFragment();
-
     if (!leaderboardData || leaderboardData.length === 0) {
       const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="4" class="text-center text-text-muted p-4">No scores recorded yet! ${
-        isLocal ? "(Guest)" : "Play a game!"
-      }</td>`;
+      const categoryFilter =
+        document.getElementById("leaderboard-category-filter")?.value || "all";
+      const difficultyFilter =
+        document.getElementById("leaderboard-difficulty-filter")?.value ||
+        "all";
+      let message = "No scores recorded yet!";
+      if (categoryFilter !== "all" || difficultyFilter !== "all") {
+        message = "No scores found for this filter.";
+      }
+      message += ` ${
+        isLocal
+          ? "(Guest)"
+          : currentUser
+          ? "Play a game!"
+          : '<a href="auth.html" class="text-primary hover:underline">Log in</a> to compete!'
+      }`;
+      row.innerHTML = `<td colspan="4" class="text-center text-text-muted p-4">${message}</td>`;
       fragment.appendChild(row);
     } else {
       leaderboardData.forEach((entry, index) => {
@@ -2181,32 +2169,28 @@
         const displayName = isLocal
           ? entry.name || "Guest"
           : entry.profile?.username || "Unknown User";
-        const score = isLocal ? entry.score : entry.total_score;
         const team = isLocal ? "N/A" : entry.profile?.team || "N/A";
+        const score = entry.score || 0;
         const isCurrentUser =
           !isLocal && currentUser && currentUser.id === entry.user_id;
-
         const row = document.createElement("tr");
         row.className = `${index % 2 === 0 ? "bg-input-bg/50" : ""} ${
           isCurrentUser ? "bg-primary/20 font-semibold" : ""
         }`;
-
         row.innerHTML = `
-                   <td class="px-4 py-2 text-center">${rank}</td>
-                   <td class="px-4 py-2 ${
-                     isCurrentUser ? "text-primary" : ""
-                   }">${displayName}${isLocal ? " (Guest)" : ""}</td>
-                   <td class="px-4 py-2 text-center font-semibold">${
-                     score || 0
-                   }</td>
-                   <td class="px-4 py-2 capitalize text-center ${
-                     team === "red"
-                       ? "text-red-400"
-                       : team === "blue"
-                       ? "text-blue-400"
-                       : ""
-                   }">${team}</td>
-               `;
+                 <td class="px-4 py-2 text-center">${rank}</td>
+                 <td class="px-4 py-2 ${
+                   isCurrentUser ? "text-primary" : ""
+                 }">${displayName}${isLocal ? " (Guest)" : ""}</td>
+                 <td class="px-4 py-2 text-center font-semibold">${score}</td>
+                 <td class="px-4 py-2 capitalize text-center ${
+                   team === "red"
+                     ? "text-red-400"
+                     : team === "blue"
+                     ? "text-blue-400"
+                     : ""
+                 }">${team}</td>
+             `;
         fragment.appendChild(row);
       });
     }
@@ -2223,9 +2207,7 @@
           )
           .eq("user_id", currentUser.id)
           .maybeSingle();
-
         if (error && status !== 406) throw error;
-
         const statsData = data
           ? {
               totalGamesPlayed: data.total_games_played || 0,
@@ -2257,11 +2239,9 @@
     const guestMessage = document.getElementById("stats-guest-message");
     const section = document.getElementById("statistics-section");
     if (!section) return;
-
     if (currentUser && stats && dlElement) {
       dlElement.classList.remove("hidden");
       if (guestMessage) guestMessage.classList.add("hidden");
-
       const defaultStats = {
         totalGamesPlayed: 0,
         totalWins: 0,
@@ -2272,13 +2252,11 @@
       if (!(playerStats.categoriesWon instanceof Set)) {
         playerStats.categoriesWon = new Set(playerStats.categoriesWon || []);
       }
-
       document.getElementById("games-played").textContent =
         playerStats.totalGamesPlayed;
       document.getElementById("total-wins").textContent = playerStats.totalWins;
       document.getElementById("hard-mode-wins").textContent =
         playerStats.hardModeWins || 0;
-
       const categoriesWonElement = document.getElementById("categories-won");
       if (categoriesWonElement) {
         const categoriesArray = Array.from(playerStats.categoriesWon);
@@ -2308,9 +2286,7 @@
           .from("achievements")
           .select("achievement_id")
           .eq("user_id", currentUser.id);
-
         if (error) throw error;
-
         const achievedData = {};
         if (data)
           data.forEach((ach) => {
@@ -2332,20 +2308,17 @@
     const guestMessage = document.getElementById("achievements-guest-message");
     const section = document.getElementById("achievements-section");
     if (!section) return;
-
     if (currentUser && userAchievements !== null && achievementsList) {
       achievementsList.innerHTML = "";
       if (guestMessage) guestMessage.classList.add("hidden");
       achievementsList.classList.remove("hidden");
       const fragment = document.createDocumentFragment();
       const allPossibleAchievements = Object.values(ACHIEVEMENTS);
-
       if (allPossibleAchievements.length === 0) {
         achievementsList.innerHTML =
           '<p class="text-text-muted col-span-full text-center">No achievements defined.</p>';
         return;
       }
-
       allPossibleAchievements.forEach((ach) => {
         const isUnlocked = userAchievements[ach.id] === true;
         const achievementDiv = document.createElement("div");
@@ -2356,23 +2329,23 @@
         }`;
         achievementDiv.setAttribute("role", "listitem");
         achievementDiv.innerHTML = `
-                   <div class="text-4xl mb-2 ${
-                     isUnlocked
-                       ? "text-yellow-400 filter grayscale-0"
-                       : "text-gray-500 filter grayscale"
-                   }">
-                       ${ach.icon}
-                       ${
-                         !isUnlocked
-                           ? '<span class="sr-only">(Locked)</span>'
-                           : '<span class="sr-only">(Unlocked)</span>'
-                       }
-                   </div>
-                   <h3 class="text-lg font-semibold mb-1 text-text-primary">${
-                     ach.name
-                   }</h3>
-                   <p class="text-sm text-text-muted">${ach.description}</p>
-               `;
+                 <div class="text-4xl mb-2 ${
+                   isUnlocked
+                     ? "text-yellow-400 filter grayscale-0"
+                     : "text-gray-500 filter grayscale"
+                 }">
+                     ${ach.icon}
+                     ${
+                       !isUnlocked
+                         ? '<span class="sr-only">(Locked)</span>'
+                         : '<span class="sr-only">(Unlocked)</span>'
+                     }
+                 </div>
+                 <h3 class="text-lg font-semibold mb-1 text-text-primary">${
+                   ach.name
+                 }</h3>
+                 <p class="text-sm text-text-muted">${ach.description}</p>
+             `;
         fragment.appendChild(achievementDiv);
       });
       achievementsList.appendChild(fragment);
@@ -2389,22 +2362,17 @@
   async function loadAndDisplayTeamLeaderboard() {
     const teamBody = document.getElementById("team-leaderboard-body");
     if (!teamBody) return;
-
     if (!currentUser || !_supabase) {
       updateTeamLeaderboardDisplay(null);
       return;
     }
-
     teamBody.innerHTML = `<tr><td colspan="2" class="text-center text-text-muted py-4">Loading team scores...</td></tr>`;
-
     try {
       const { data, error } = await _supabase
         .from("game_stats")
         .select(`total_score, profile:profiles!inner(team)`)
         .in("profile.team", ["blue", "red"]);
-
       if (error) throw error;
-
       const teamScores = { blue: 0, red: 0 };
       if (data) {
         data.forEach((item) => {
@@ -2426,7 +2394,6 @@
   function updateTeamLeaderboardDisplay(teamScores) {
     const teamBody = document.getElementById("team-leaderboard-body");
     if (!teamBody) return;
-
     if (currentUser && teamScores) {
       let blueStyle = "text-text-primary";
       let redStyle = "text-text-primary";
@@ -2438,17 +2405,16 @@
         blueStyle = "text-yellow-400 font-semibold";
         redStyle = "text-yellow-400 font-semibold";
       }
-
       teamBody.innerHTML = `
-                <tr class="border-b border-border-color">
-                    <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td>
-                    <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td>
-                </tr>
-                <tr>
-                    <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td>
-                    <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td>
-                </tr>
-            `;
+              <tr class="border-b border-border-color">
+                  <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td>
+                  <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td>
+              </tr>
+              <tr>
+                  <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td>
+                  <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td>
+              </tr>
+          `;
     } else if (currentUser && teamScores === undefined) {
       teamBody.innerHTML = `<tr><td colspan="2" class="text-center text-error py-4">Error loading team scores.</td></tr>`;
     } else {
