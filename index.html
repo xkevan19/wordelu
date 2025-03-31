@@ -113,7 +113,8 @@
             border: none;
             border-radius: 0 0.5rem 0.5rem 0;
             width: 32px;
-            height: 64px;
+            height: auto;
+            padding: 16px 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -139,12 +140,11 @@
             transition: transform 0.3s ease;
         }
 
-
         .slide-menu {
             position: fixed;
             left: -200px;
-            top: 50%;
-            height: auto;
+            top: 0;
+            height: 100%;
             width: 200px;
             background-color: rgba(26, 26, 27, 0.98);
             z-index: 59;
@@ -160,10 +160,13 @@
 
         .menu-content {
             padding: 1.5rem 1rem;
-            margin-top: 64px;
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
         }
 
         .menu-button {
