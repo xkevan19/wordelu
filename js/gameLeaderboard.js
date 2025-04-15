@@ -257,7 +257,7 @@ async function loadAndDisplayTeamLeaderboard() {
   try {
     const { data, error } = await _supabase
       .from("profiles")
-      .select(`team`)
+      .select(`id, team`)
       .neq("team", null);
     if (error) throw error;
 
