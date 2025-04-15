@@ -415,30 +415,26 @@ function setupAuthFormListeners() {
             userMessage =
               "An account or profile constraint failed. Please check your details.";
           showMessage(signupMessage, userMessage);
-        } else if (data.user) {
-          if (data.user.identities && data.user.identities.length === 0) {
-            showMessage(
-              signupMessage,
-              "Sign up successful! Please check your email to confirm your account.",
-              false
-            );
-            signupForm.reset();
-          } else {
-            showMessage(
-              signupMessage,
-              "Sign up successful! Redirecting...",
-              false
-            );
-            setTimeout(() => {
-              window.location.href = "index.html";
-            }, 1500);
-            signupForm.reset();
-          }
+        } else if (data.user.identities && data.user.identities.length === 0) {
+          showMessage(
+            signupMessage,
+            "Sign up successful! Redirecting to verification page...",
+            false
+          );
+          setTimeout(() => {
+            window.location.href = "confirm.html";
+          }, 1500);
+          signupForm.reset();
         } else {
           showMessage(
             signupMessage,
-            "An unexpected issue occurred during sign up."
+            "Sign up successful! Redirecting...",
+            false
           );
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 1500);
+          signupForm.reset();
         }
       } catch (err) {
         console.error("Unexpected sign up exception:", err);
@@ -544,6 +540,7 @@ function setupAuthStateListener() {
     const isAuthPage = currentPage === "auth.html";
     const isAccountPage = currentPage === "account.html";
     const isIndexPage = currentPage === "index.html" || currentPage === "";
+    const isConfirmPage = currentPage === "confirm.html";
 
     const urlParams = new URLSearchParams(window.location.hash.substring(1));
     const type = urlParams.get("type");
@@ -597,7 +594,7 @@ function setupAuthStateListener() {
         await fetchUserProfile(session.user.id);
       }
 
-      if (isAuthPage) {
+      if (isAuthPage || isConfirmPage) {
         console.log("Redirecting logged-in user FROM auth.html TO index.html.");
         window.location.href = "index.html";
       } else {
