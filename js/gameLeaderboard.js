@@ -75,109 +75,89 @@ async function loadAndDisplayLeaderboard() {
     `Fetching leaderboard. Filters (Category: ${categoryFilter}, Difficulty: ${difficultyFilter})`
   );
   try {
-    if (
-      typeof currentUser !== "undefined" &&
-      currentUser &&
-      typeof _supabase !== "undefined" &&
-      _supabase
-    ) {
-      let finalAggregatedData = [];
-      if (categoryFilter === "all" && difficultyFilter === "all") {
-        console.log("Fetching global leaderboard from game_stats");
-        const { data, error } = await _supabase
-          .from("game_stats")
-          .select(
-            `total_score, user_id, profile:profiles!inner(username, team)`
-          )
-          .order("total_score", { ascending: false })
-          .limit(CONFIG.LEADERBOARD_SIZE);
-        if (error) throw error;
-        finalAggregatedData = (data || []).map((item) => ({
-          user_id: item.user_id,
-          profile: item.profile,
-          score: item.total_score,
-        }));
-      } else {
-        console.log(
-          "Fetching filtered leaderboard from game_results (two-step)"
-        );
-        let resultsQuery = _supabase
-          .from("game_results")
-          .select(`user_id, score`);
-        if (categoryFilter !== "all") {
-          resultsQuery = resultsQuery.eq("category", categoryFilter);
-        }
-        if (difficultyFilter !== "all") {
-          resultsQuery = resultsQuery.eq("difficulty", difficultyFilter);
-        }
-        const { data: resultsData, error: resultsError } = await resultsQuery;
-        if (resultsError) throw resultsError;
-        const userScoresMap = {};
-        (resultsData || []).forEach((result) => {
-          if (!userScoresMap[result.user_id]) {
-            userScoresMap[result.user_id] = {
-              user_id: result.user_id,
-              score: 0,
-            };
-          }
-          userScoresMap[result.user_id].score += result.score;
-        });
-        const aggregatedScores = Object.values(userScoresMap);
-        const userIds = aggregatedScores
-          .map((item) => item.user_id)
-          .filter((id) => id);
-
-        if (userIds.length > 0) {
-          const { data: profilesData, error: profilesError } = await _supabase
-            .from("profiles")
-            .select("id, username, team")
-            .in("id", userIds);
-          if (profilesError) {
-            console.error(
-              "Error fetching profiles for leaderboard:",
-              profilesError
-            );
-            finalAggregatedData = aggregatedScores.map((item) => ({
-              ...item,
-              profile: { username: "Unknown", team: "N/A" },
-            }));
-          } else {
-            const profilesMap = {};
-            (profilesData || []).forEach((profile) => {
-              profilesMap[profile.id] = profile;
-            });
-            finalAggregatedData = aggregatedScores.map((item) => ({
-              ...item,
-              profile: profilesMap[item.user_id] || {
-                username: "Unknown",
-                team: "N/A",
-              },
-            }));
-          }
-        } else {
-          finalAggregatedData = [];
-        }
-      }
-      leaderboardData = finalAggregatedData
-        .sort((a, b) => b.score - a.score)
-        .slice(0, CONFIG.LEADERBOARD_SIZE);
-      isLocal = false;
+    let finalAggregatedData = [];
+    if (categoryFilter === "all" && difficultyFilter === "all") {
+      console.log("Fetching global leaderboard from game_stats");
+      const { data, error } = await _supabase
+        .from("game_stats")
+        .select(`total_score, user_id, profile:profiles!inner(username, team)`)
+        .order("total_score", { ascending: false })
+        .limit(CONFIG.LEADERBOARD_SIZE);
+      if (error) throw error;
+      finalAggregatedData = (data || []).map((item) => ({
+        user_id: item.user_id,
+        profile: item.profile,
+        score: item.total_score,
+      }));
     } else {
-      console.log("Fetching guest leaderboard from localStorage");
-      leaderboardData = JSON.parse(
-        localStorage.getItem("wordleLeaderboard") || "[]"
-      );
-      leaderboardData = leaderboardData
-        .slice(0, CONFIG.LEADERBOARD_SIZE)
-        .map((item) => ({ ...item, score: item.score }));
-      isLocal = true;
-      if (leaderboardTitle) leaderboardTitle.textContent = "Guest Leaderboard";
+      console.log("Fetching filtered leaderboard from game_results (two-step)");
+      let resultsQuery = _supabase
+        .from("game_results")
+        .select(`user_id, score`);
+      if (categoryFilter !== "all") {
+        resultsQuery = resultsQuery.eq("category", categoryFilter);
+      }
+      if (difficultyFilter !== "all") {
+        resultsQuery = resultsQuery.eq("difficulty", difficultyFilter);
+      }
+      const { data: resultsData, error: resultsError } = await resultsQuery;
+      if (resultsError) throw resultsError;
+      const userScoresMap = {};
+      (resultsData || []).forEach((result) => {
+        if (!userScoresMap[result.user_id]) {
+          userScoresMap[result.user_id] = {
+            user_id: result.user_id,
+            score: 0,
+          };
+        }
+        userScoresMap[result.user_id].score += result.score;
+      });
+      const aggregatedScores = Object.values(userScoresMap);
+      const userIds = aggregatedScores
+        .map((item) => item.user_id)
+        .filter((id) => id);
+
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await _supabase
+          .from("profiles")
+          .select("id, username, team")
+          .in("id", userIds);
+        if (profilesError) {
+          console.error(
+            "Error fetching profiles for leaderboard:",
+            profilesError
+          );
+          finalAggregatedData = aggregatedScores.map((item) => ({
+            ...item,
+            profile: { username: "Unknown", team: "N/A" },
+          }));
+        } else {
+          const profilesMap = {};
+          (profilesData || []).forEach((profile) => {
+            profilesMap[profile.id] = profile;
+          });
+          finalAggregatedData = aggregatedScores.map((item) => ({
+            ...item,
+            profile: profilesMap[item.user_id] || {
+              username: "Unknown",
+              team: "N/A",
+            },
+          }));
+        }
+      } else {
+        finalAggregatedData = [];
+      }
     }
-    updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
+    leaderboardData = finalAggregatedData
+      .sort((a, b) => b.score - a.score)
+      .slice(0, CONFIG.LEADERBOARD_SIZE);
+    isLocal = false;
   } catch (e) {
     console.error("Error loading leaderboard:", e);
     queryError = e;
-    if (typeof currentUser !== "undefined" && currentUser) {
+
+    // Fallback to local storage *only* if the user is a guest
+    if (!currentUser) {
       try {
         leaderboardData = JSON.parse(
           localStorage.getItem("wordleLeaderboard") || "[]"
@@ -186,24 +166,24 @@ async function loadAndDisplayLeaderboard() {
           .slice(0, CONFIG.LEADERBOARD_SIZE)
           .map((item) => ({ ...item, score: item.score }));
         isLocal = true;
-        updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
-        if (typeof showToast === "function")
-          showToast(
-            "Failed to load online leaderboard. Showing local guest scores."
-          );
+
         if (leaderboardTitle)
-          leaderboardTitle.textContent = "Guest Leaderboard (Offline)";
+          leaderboardTitle.textContent = "Guest Leaderboard";
       } catch (localError) {
         console.error("Error loading local leaderboard fallback:", localError);
         leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-error p-4">Failed to load leaderboard. ${
           queryError?.message || ""
         }</td></tr>`;
+        return; // Stop execution if local fallback fails
       }
     } else {
       leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-error p-4">Failed to load leaderboard. ${
         queryError?.message || ""
       }</td></tr>`;
+      return; // Stop execution for logged-in users if online load fails
     }
+  } finally {
+    updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
   }
 }
 
@@ -225,8 +205,6 @@ function updateLeaderboardDisplayGlobal(leaderboardData = [], isLocal = false) {
     message += ` ${
       isLocal
         ? "(Guest)"
-        : typeof currentUser !== "undefined" && currentUser
-        ? "Play a game!"
         : '<a href="auth.html" class="text-primary hover:underline">Log in</a> to compete!'
     }`;
     row.innerHTML = `<td colspan="4" class="text-center text-text-muted p-4">${message}</td>`;
@@ -240,7 +218,6 @@ function updateLeaderboardDisplayGlobal(leaderboardData = [], isLocal = false) {
       const team = isLocal ? "N/A" : entry.profile?.team || "N/A";
       const score = entry.score || 0;
       const isCurrentUser =
-        !isLocal &&
         typeof currentUser !== "undefined" &&
         currentUser &&
         currentUser.id === entry.user_id;
@@ -322,15 +299,15 @@ function updateTeamLeaderboardDisplay(teamScores) {
     }
 
     teamBody.innerHTML = `
-              <tr class="border-b border-border-color">
-                  <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td>
-                  <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td>
-              </tr>
-              <tr>
-                  <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td>
-                  <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td>
-              </tr>
-          `;
+                <tr class="border-b border-border-color">
+                    <td class="px-4 py-3 font-semibold ${blueStyle}">Blue Team</td>
+                    <td class="px-4 py-3 text-center ${blueStyle}">${teamScores.blue}</td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-3 font-semibold ${redStyle}">Red Team</td>
+                    <td class="px-4 py-3 text-center ${redStyle}">${teamScores.red}</td>
+                </tr>
+            `;
   } else if (
     typeof currentUser !== "undefined" &&
     currentUser &&
