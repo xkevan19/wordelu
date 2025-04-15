@@ -428,12 +428,9 @@ function setupAuthFormListeners() {
         } else {
           showMessage(
             signupMessage,
-            "Sign up successful! Redirecting...",
+            "Sign up successful! Please check your email to confirm your account.",
             false
           );
-          setTimeout(() => {
-            window.location.href = "index.html";
-          }, 1500);
           signupForm.reset();
         }
       } catch (err) {
