@@ -22,7 +22,6 @@ function setupLeaderboardFilterListeners() {
   );
 
   const reloadLeaderboard = () => {
-    console.log("Leaderboard filters changed. Reloading leaderboard.");
     loadAndDisplayLeaderboard();
   };
 
@@ -71,29 +70,27 @@ async function loadAndDisplayLeaderboard() {
     leaderboardTitle.textContent = titleText;
   }
 
-  console.log(
-    `Fetching leaderboard. Filters (Category: ${categoryFilter}, Difficulty: ${difficultyFilter})`
-  );
   try {
     let finalAggregatedData = [];
     if (categoryFilter === "all" && difficultyFilter === "all") {
-      console.log("Fetching global leaderboard from game_stats");
       const { data, error } = await _supabase
         .from("game_stats")
         .select(`total_score, user_id, profile:profiles!inner(username, team)`)
         .order("total_score", { ascending: false })
         .limit(CONFIG.LEADERBOARD_SIZE);
+
       if (error) throw error;
+
       finalAggregatedData = (data || []).map((item) => ({
         user_id: item.user_id,
         profile: item.profile,
         score: item.total_score,
       }));
     } else {
-      console.log("Fetching filtered leaderboard from game_results (two-step)");
       let resultsQuery = _supabase
         .from("game_results")
         .select(`user_id, score`);
+
       if (categoryFilter !== "all") {
         resultsQuery = resultsQuery.eq("category", categoryFilter);
       }
@@ -156,7 +153,6 @@ async function loadAndDisplayLeaderboard() {
     console.error("Error loading leaderboard:", e);
     queryError = e;
 
-    // Fallback to local storage *only* if the user is a guest
     if (!currentUser) {
       try {
         leaderboardData = JSON.parse(
@@ -174,13 +170,13 @@ async function loadAndDisplayLeaderboard() {
         leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-error p-4">Failed to load leaderboard. ${
           queryError?.message || ""
         }</td></tr>`;
-        return; // Stop execution if local fallback fails
+        return;
       }
     } else {
       leaderboardBody.innerHTML = `<tr><td colspan="4" class="text-center text-error p-4">Failed to load leaderboard. ${
         queryError?.message || ""
       }</td></tr>`;
-      return; // Stop execution for logged-in users if online load fails
+      return;
     }
   } finally {
     updateLeaderboardDisplayGlobal(leaderboardData, isLocal);
@@ -260,21 +256,45 @@ async function loadAndDisplayTeamLeaderboard() {
   teamBody.innerHTML = `<tr><td colspan="2" class="text-center text-text-muted py-4">Loading team scores...</td></tr>`;
   try {
     const { data, error } = await _supabase
-      .from("game_stats")
-      .select(`total_score, profile:profiles!inner(team)`)
-      .in("profile.team", ["blue", "red"]);
+      .from("profiles")
+      .select(`team`)
+      .neq("team", null);
     if (error) throw error;
+
     const teamScores = { blue: 0, red: 0 };
+
     if (data) {
-      data.forEach((item) => {
-        if (
-          item.profile?.team &&
-          teamScores.hasOwnProperty(item.profile.team)
-        ) {
-          teamScores[item.profile.team] += item.total_score || 0;
-        }
-      });
+      const { data: blueScores, error: blueError } = await _supabase
+        .from("game_stats")
+        .select(`total_score`)
+        .in(
+          "user_id",
+          data.filter((user) => user.team === "blue").map((user) => user.id)
+        );
+      if (blueError) throw blueError;
+      if (blueScores) {
+        teamScores.blue = blueScores.reduce(
+          (sum, item) => sum + item.total_score,
+          0
+        );
+      }
+
+      const { data: redScores, error: redError } = await _supabase
+        .from("game_stats")
+        .select(`total_score`)
+        .in(
+          "user_id",
+          data.filter((user) => user.team === "red").map((user) => user.id)
+        );
+      if (redError) throw redError;
+      if (redScores) {
+        teamScores.red = redScores.reduce(
+          (sum, item) => sum + item.total_score,
+          0
+        );
+      }
     }
+
     updateTeamLeaderboardDisplay(teamScores);
   } catch (e) {
     console.error("Error loading team leaderboard:", e);
